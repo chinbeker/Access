@@ -1,14 +1,21 @@
 Option Compare Database
 Option Explicit
 
-
 Public AppName As String             '应用名称
 Public AppTitle As String            '标题名称
 Public Installed As Boolean          '安装状态
-Public AppStarted As Boolean         '启动状态
 Public DatabaseConnected As Boolean  '数据库连接状态
 
 Public Settings As New Setting       '设置
+
+'已启动
+Public Function AppStarted() As Boolean
+    If GlobalData.GetValue("AppStarted") = True Then
+        AppStarted = True
+    Else
+        AppStarted = False
+    End If
+End Function
 
 ' 应用启动
 Public Sub Start()
@@ -142,7 +149,7 @@ Public Sub Start()
         DoCmd.LockNavigationPane True
     End If
 
-    App.AppStarted = True
+    GlobalData.SetValue "AppStarted", True
     Exit Sub
 End Sub
 
