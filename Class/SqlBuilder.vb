@@ -85,13 +85,14 @@ End Sub
 Public Sub Into(ByVal TableName As String)
     If Not StringBase.IsWhiteSpace(TableName) Then IntoTableName = TableName
 End Sub
+
 ' 表连接
-Public Sub Inner(ByVal InnerTable As String, ByVal TargetTable As String, ByVal JoinCondition As String, Optional ByVal InnerJoinCondition As String)
+Public Sub Inner(ByVal InnerTable As String, ByVal TargetTable As String, ByVal InnerJoinCondition As String, Optional ByVal JoinCondition As String)
     On Error GoTo ErrorHandler
     If StringBase.IsWhiteSpace(InnerTable) Then Exit Sub
     If StringBase.IsWhiteSpace(TargetTable) Then Exit Sub
-    If StringBase.IsWhiteSpace(JoinCondition) Then Exit Sub
-    If IsMissing(InnerJoinCondition) Or StringBase.IsWhiteSpace(InnerJoinCondition) Then InnerJoinCondition = JoinCondition
+    If StringBase.IsWhiteSpace(InnerJoinCondition) Then Exit Sub
+    If IsMissing(JoinCondition) Or StringBase.IsWhiteSpace(JoinCondition) Then JoinCondition = InnerJoinCondition
     If InnerCollection Is Nothing Then Set InnerCollection = New Collection
     InnerCollection.Add " INNER JOIN " & InnerTable & " ON " & TargetTable & "." & JoinCondition & "=" & InnerTable & "." & InnerJoinCondition
     Exit Sub
@@ -106,14 +107,28 @@ Private Function ToSourceSqlString(Optional ByVal IsUpdate As Boolean = False) A
     If HasSource Then
         Dim SourceSqlString As String
         If Not InnerCollection Is Nothing Then
-            If InnerCollection.Count > 0 Then
-                Dim i As Integer
-                For i = 1 To InnerCollection.Count
-                    SourceSqlString = SourceSqlString & InnerCollection(i)
-                Next i
+            Dim length As Long
+            length = InnerCollection.Count
+            If length > 0 Then
+                If length = 1 Then
+                    SourceSqlString = FromTableName & InnerCollection(1)
+                Else
+                    SourceSqlString = "(" & FromTableName & InnerCollection(1) & ")"
+                    Dim i As Integer
+                    For i = 2 To length
+                        If i < length Then
+                            SourceSqlString = "(" & SourceSqlString & InnerCollection(i) & ")"
+                        Else
+                            SourceSqlString = SourceSqlString & InnerCollection(i)
+                        End If
+                    Next i
+                End If
+            Else
+                SourceSqlString = FromTableName
             End If
+        Else
+            SourceSqlString = FromTableName
         End If
-        SourceSqlString = FromTableName & SourceSqlString
         If IsUpdate = False Then SourceSqlString = " FROM " & SourceSqlString
         ToSourceSqlString = SourceSqlString
     End If
@@ -535,7 +550,7 @@ Public Function ToSqlString(Optional ByVal Operation As Byte = 0) As String
     Set HavingCollection = Nothing
     Set OrderCollection = Nothing
 
-    'MsgBox SqlString
+    MsgBox SqlString
     ToSqlString = SqlString
     Exit Function
 
