@@ -403,18 +403,16 @@ End Function
 
 
 ' 表格第一条记录（快照）
-Public Function TableFirst(ByVal TableName As String, ByVal OrderField As String) As DAO.Recordset
+Public Function TableFirst(ByVal TableName As String, Optional ByVal OrderField As String) As DAO.Recordset
     On Error GoTo ErrorHandler
     If StringBase.IsWhiteSpace(TableName) Then Exit Function
-    If StringBase.IsWhiteSpace(OrderField) Then Exit Function
     Dim Sql As New SqlBuilder
     Sql.Top 1
     Sql.SelectAll
     Sql.From TableName
-    Sql.Order OrderField
+    If Not IsMissing(OrderField) And Not StringBase.IsWhiteSpace(OrderField) Then Sql.Order OrderField
     Dim SqlString As String
     SqlString = Sql.ToSqlString(0)
-
     If Len(SqlString) > 0 Then
         Call CreateConnection
         If Sql.HasParam Then
@@ -438,18 +436,16 @@ ErrorHandler:
 End Function
 
 ' 表格第一条记录（动态集）
-Public Function TableFirstRecord(ByVal TableName As String, ByVal OrderField As String) As DAO.Recordset
+Public Function TableFirstRecord(ByVal TableName As String, Optional ByVal OrderField As String) As DAO.Recordset
     On Error GoTo ErrorHandler
     If StringBase.IsWhiteSpace(TableName) Then Exit Function
-    If StringBase.IsWhiteSpace(OrderField) Then Exit Function
     Dim Sql As New SqlBuilder
     Sql.SelectAll
     Sql.Top 1
     Sql.From TableName
-    Sql.Order OrderField
+    If Not IsMissing(OrderField) And Not StringBase.IsWhiteSpace(OrderField) Then Sql.Order OrderField
     Dim SqlString As String
     SqlString = Sql.ToSqlString(0)
-
     If Len(SqlString) > 0 Then
         Call CreateConnection
         If Sql.HasParam Then
@@ -473,15 +469,14 @@ ErrorHandler:
 End Function
 
 ' 表格最后一条记录（快照）
-Public Function TableLast(ByVal TableName As String, ByVal OrderField As String) As DAO.Recordset
+Public Function TableLast(ByVal TableName As String, Optional ByVal OrderField As String) As DAO.Recordset
     On Error GoTo ErrorHandler
     If StringBase.IsWhiteSpace(TableName) Then Exit Function
-    If StringBase.IsWhiteSpace(OrderField) Then Exit Function
     Dim Sql As New SqlBuilder
     Sql.SelectAll
     Sql.Top 1
     Sql.From TableName
-    Sql.Order OrderField, True
+    If Not IsMissing(OrderField) And Not StringBase.IsWhiteSpace(OrderField) Then Sql.Order OrderField, True
     Dim SqlString As String
     SqlString = Sql.ToSqlString(0)
     If Len(SqlString) > 0 Then
@@ -507,18 +502,16 @@ ErrorHandler:
 End Function
 
 ' 表格最后一条记录（动态集）
-Public Function TableLastRecord(ByVal TableName As String, ByVal OrderField As String) As DAO.Recordset
+Public Function TableLastRecord(ByVal TableName As String, Optional ByVal OrderField As String) As DAO.Recordset
     On Error GoTo ErrorHandler
     If StringBase.IsWhiteSpace(TableName) Then Exit Function
-    If StringBase.IsWhiteSpace(OrderField) Then Exit Function
     Dim Sql As New SqlBuilder
     Sql.SelectAll
     Sql.Top 1
     Sql.From TableName
-    Sql.Order OrderField, True
+    If Not IsMissing(OrderField) And Not StringBase.IsWhiteSpace(OrderField) Then Sql.Order OrderField, True
     Dim SqlString As String
     SqlString = Sql.ToSqlString(0)
-
     If Len(SqlString) > 0 Then
         Call CreateConnection
         If Sql.HasParam Then
