@@ -16,8 +16,8 @@ ErrorHandler:
 End Sub
 
 ' 引用字段（拼接SQL字符串时不会加引号）
-Public Function Field(ByVal name As String) As String
-    If Not StringBase.IsWhiteSpace(name) Then Field = "[$$]" & name
+Public Function Field(ByVal Name As String) As String
+    If Not StringBase.IsWhiteSpace(Name) Then Field = "[$$]" & Name
 End Function
 
 ' 引用表达式（拼接SQL字符串时不会加引号）
@@ -25,8 +25,8 @@ Public Function Expression(ByVal expr As String) As String
     Expression = DbSql.Field(expr)
 End Function
 ' 引用参数（拼接SQL字符串时不会加引号）
-Public Function Param(ByVal name As String) As String
-    If Not StringBase.IsWhiteSpace(name) Then Param = "[$$][Param_" & name & "]"
+Public Function Param(ByVal Name As String) As String
+    If Not StringBase.IsWhiteSpace(Name) Then Param = "[$$][Param_" & Name & "]"
 End Function
 
 
@@ -67,11 +67,11 @@ ErrorHandler:
     Exit Function
 End Function
 ' 获取表定义
-Public Function TableDef(ByVal name As String) As DAO.TableDef
+Public Function TableDef(ByVal Name As String) As DAO.TableDef
     On Error GoTo ErrorHandler
-    If StringBase.IsWhiteSpace(name) Then Exit Function
+    If StringBase.IsWhiteSpace(Name) Then Exit Function
     Call CreateConnection
-    Set TableDef = DbSql.Database.TableDefs(name)
+    Set TableDef = DbSql.Database.TableDefs(Name)
     Exit Function
 ErrorHandler:
     Call Message.Error(Err)
@@ -79,11 +79,11 @@ ErrorHandler:
 End Function
 
 ' 获取整张表（本地表）
-Public Function OpenTable(ByVal name As String) As DAO.Recordset
+Public Function OpenTable(ByVal Name As String) As DAO.Recordset
     On Error GoTo ErrorHandler
-    If StringBase.IsWhiteSpace(name) Then Exit Function
+    If StringBase.IsWhiteSpace(Name) Then Exit Function
     Call CreateConnection
-    Set OpenTable = DbSql.Database.OpenRecordset(name, dbOpenTable)
+    Set OpenTable = DbSql.Database.OpenRecordset(Name, dbOpenTable)
     Exit Function
 ErrorHandler:
     Call Message.Error(Err)
@@ -91,11 +91,11 @@ ErrorHandler:
 End Function
 
 ' 获取整张表（动态集）
-Public Function TableDynaset(ByVal name As String) As DAO.Recordset
+Public Function TableDynaset(ByVal Name As String) As DAO.Recordset
     On Error GoTo ErrorHandler
-    If StringBase.IsWhiteSpace(name) Then Exit Function
+    If StringBase.IsWhiteSpace(Name) Then Exit Function
     Call CreateConnection
-    Set TableDynaset = DbSql.Database.OpenRecordset(name, dbOpenDynaset, dbSeeChanges)
+    Set TableDynaset = DbSql.Database.OpenRecordset(Name, dbOpenDynaset, dbSeeChanges)
     Exit Function
 ErrorHandler:
     Call Message.Error(Err)
@@ -103,11 +103,11 @@ ErrorHandler:
 End Function
 
 ' 获取整张表（快照）
-Public Function TableSnapshot(ByVal name As String) As DAO.Recordset
+Public Function TableSnapshot(ByVal Name As String) As DAO.Recordset
     On Error GoTo ErrorHandler
-    If StringBase.IsWhiteSpace(name) Then Exit Function
+    If StringBase.IsWhiteSpace(Name) Then Exit Function
     Call CreateConnection
-    Set TableSnapshot = DbSql.Database.OpenRecordset(name, dbOpenSnapshot)
+    Set TableSnapshot = DbSql.Database.OpenRecordset(Name, dbOpenSnapshot)
     Exit Function
 
 ErrorHandler:
@@ -366,8 +366,6 @@ ErrorHandler:
     Exit Function
 End Function
 
-
-
 ' 第一条记录（动态集）
 Public Function FirstRecord(ByVal TableName As String, Optional ByRef Sql As SqlBuilder) As DAO.Recordset
     On Error GoTo ErrorHandler
@@ -380,7 +378,6 @@ Public Function FirstRecord(ByVal TableName As String, Optional ByRef Sql As Sql
     Sql.From TableName
     Dim SqlString As String
     SqlString = Sql.ToSqlString(0)
-
     If Len(SqlString) > 0 Then
         Call CreateConnection
         If Sql.HasParam Then
@@ -394,6 +391,146 @@ Public Function FirstRecord(ByVal TableName As String, Optional ByRef Sql As Sql
         Else
             Set Sql = Nothing
             Set FirstRecord = DbSql.Database.OpenRecordset(SqlString, dbOpenDynaset, dbSeeChanges)
+        End If
+    End If
+    Exit Function
+
+ErrorHandler:
+    Call Message.Error(Err)
+    Exit Function
+End Function
+
+
+' 表格第一条记录（快照）
+Public Function TableFirst(ByVal TableName As String, ByVal OrderField As String) As DAO.Recordset
+    On Error GoTo ErrorHandler
+    If StringBase.IsWhiteSpace(TableName) Then Exit Function
+    If StringBase.IsWhiteSpace(OrderField) Then Exit Function
+    Dim Sql As New SqlBuilder
+    Sql.Top 1
+    Sql.SelectAll
+    Sql.From TableName
+    Sql.Order OrderField
+    Dim SqlString As String
+    SqlString = Sql.ToSqlString(0)
+
+    If Len(SqlString) > 0 Then
+        Call CreateConnection
+        If Sql.HasParam Then
+            Dim Def As DAO.QueryDef
+            Set Def = DbSql.Database.CreateQueryDef("", SqlString)
+            Sql.SetParam Def
+            Set Sql = Nothing
+            Set TableFirst = Def.OpenRecordset(dbOpenSnapshot)
+            Def.Close
+            Set Def = Nothing
+        Else
+            Set Sql = Nothing
+            Set TableFirst = DbSql.Database.OpenRecordset(SqlString, dbOpenSnapshot)
+        End If
+    End If
+    Exit Function
+
+ErrorHandler:
+    Call Message.Error(Err)
+    Exit Function
+End Function
+
+' 表格第一条记录（动态集）
+Public Function TableFirstRecord(ByVal TableName As String, ByVal OrderField As String) As DAO.Recordset
+    On Error GoTo ErrorHandler
+    If StringBase.IsWhiteSpace(TableName) Then Exit Function
+    If StringBase.IsWhiteSpace(OrderField) Then Exit Function
+    Dim Sql As New SqlBuilder
+    Sql.SelectAll
+    Sql.Top 1
+    Sql.From TableName
+    Sql.Order OrderField
+    Dim SqlString As String
+    SqlString = Sql.ToSqlString(0)
+
+    If Len(SqlString) > 0 Then
+        Call CreateConnection
+        If Sql.HasParam Then
+            Dim Def As DAO.QueryDef
+            Set Def = DbSql.Database.CreateQueryDef("", SqlString)
+            Sql.SetParam Def
+            Set Sql = Nothing
+            Set TableFirstRecord = Def.OpenRecordset(dbOpenDynaset, dbSeeChanges)
+            Def.Close
+            Set Def = Nothing
+        Else
+            Set Sql = Nothing
+            Set TableFirstRecord = DbSql.Database.OpenRecordset(SqlString, dbOpenDynaset, dbSeeChanges)
+        End If
+    End If
+    Exit Function
+
+ErrorHandler:
+    Call Message.Error(Err)
+    Exit Function
+End Function
+
+' 表格最后一条记录（快照）
+Public Function TableLast(ByVal TableName As String, ByVal OrderField As String) As DAO.Recordset
+    On Error GoTo ErrorHandler
+    If StringBase.IsWhiteSpace(TableName) Then Exit Function
+    If StringBase.IsWhiteSpace(OrderField) Then Exit Function
+    Dim Sql As New SqlBuilder
+    Sql.SelectAll
+    Sql.Top 1
+    Sql.From TableName
+    Sql.Order OrderField, True
+    Dim SqlString As String
+    SqlString = Sql.ToSqlString(0)
+    If Len(SqlString) > 0 Then
+        Call CreateConnection
+        If Sql.HasParam Then
+            Dim Def As DAO.QueryDef
+            Set Def = DbSql.Database.CreateQueryDef("", SqlString)
+            Sql.SetParam Def
+            Set Sql = Nothing
+            Set TableLast = Def.OpenRecordset(dbOpenSnapshot)
+            Def.Close
+            Set Def = Nothing
+        Else
+            Set Sql = Nothing
+            Set TableLast = DbSql.Database.OpenRecordset(SqlString, dbOpenSnapshot)
+        End If
+    End If
+    Exit Function
+
+ErrorHandler:
+    Call Message.Error(Err)
+    Exit Function
+End Function
+
+' 表格最后一条记录（动态集）
+Public Function TableLastRecord(ByVal TableName As String, ByVal OrderField As String) As DAO.Recordset
+    On Error GoTo ErrorHandler
+    If StringBase.IsWhiteSpace(TableName) Then Exit Function
+    If StringBase.IsWhiteSpace(OrderField) Then Exit Function
+    Dim Sql As New SqlBuilder
+    Sql.SelectAll
+    Sql.Top 1
+    Sql.From TableName
+    Sql.Order OrderField, True
+    Dim SqlString As String
+    SqlString = Sql.ToSqlString(0)
+
+    If Len(SqlString) > 0 Then
+        Call CreateConnection
+        If Sql.HasParam Then
+            Dim Def As DAO.QueryDef
+            Set Def = DbSql.Database.CreateQueryDef("", SqlString)
+            Sql.SetParam Def
+            Set Sql = Nothing
+            Set TableLastRecord = Def.OpenRecordset(dbOpenDynaset, dbSeeChanges)
+            Def.Close
+            Set Def = Nothing
+        Else
+            Set Sql = Nothing
+            Set TableLastRecord = DbSql.Database.OpenRecordset(SqlString, dbOpenDynaset, dbSeeChanges)
         End If
     End If
     Exit Function
@@ -470,18 +607,105 @@ ErrorHandler:
 End Function
 
 
-' 快速查询记录（快照）
-Public Function Lookup(ByVal TableName As String, ByVal Field As String, ByVal Condition As String) As Variant
+' 快速查询记录指定字段值
+Public Function Lookup(ByVal TableName As String, ByVal Field As String, ByVal Condition As String, Optional ByVal OrderField As String) As Variant
     On Error GoTo ErrorHandler
     If StringBase.IsWhiteSpace(TableName) Then Exit Function
     If StringBase.IsWhiteSpace(Field) Then Exit Function
     If StringBase.IsWhiteSpace(Condition) Then Exit Function
-    Lookup = DLookup(Field, TableName, Condition)
+    If IsMissing(OrderField) Or StringBase.IsWhiteSpace(OrderField) Then
+        Lookup = Application.DLookup(Field, TableName, Condition)
+    Else
+        Dim Sql As New SqlBuilder
+        Sql.Top 1
+        Sql.Field Field
+        Sql.From TableName
+        Sql.Where Condition
+        Sql.Order OrderField
+        Dim SqlString As String
+        SqlString = Sql.ToSqlString(0)
+        Set Sql = Nothing
+        If Len(SqlString) > 0 Then
+            Lookup = Application.DLookup(Field, SqlString)
+        Else
+            Lookup = Null
+        End If
+    End If
     Exit Function
 ErrorHandler:
     Call Message.Error(Err)
     Exit Function
 End Function
+
+' 快速查询第一条记录指定字段值
+Public Function FirstValue(ByVal TableName As String, ByVal Field As String, Optional ByVal Condition As String, Optional ByVal OrderField As String) As Variant
+    On Error GoTo ErrorHandler
+    If StringBase.IsWhiteSpace(TableName) Then Exit Function
+    If StringBase.IsWhiteSpace(Field) Then Exit Function
+    If IsMissing(OrderField) Or StringBase.IsWhiteSpace(OrderField) Then
+        If IsMissing(Condition) Or StringBase.IsWhiteSpace(Condition) Then
+            FirstValue = Application.DFirst(Field, TableName)
+        Else
+            FirstValue = Application.DFirst(Field, TableName, Condition)
+        End If
+    Else
+        Dim Sql As New SqlBuilder
+        Sql.Top 1
+        Sql.Field Field
+        Sql.From TableName
+        Sql.Where Condition
+        Sql.Order OrderField
+        Dim SqlString As String
+        SqlString = Sql.ToSqlString(0)
+        Set Sql = Nothing
+        If Len(SqlString) > 0 Then
+            FirstValue = Application.DFirst(Field, SqlString)
+        Else
+            FirstValue = Null
+        End If
+    End If
+    Exit Function
+
+ErrorHandler:
+    Call Message.Error(Err)
+    Exit Function
+End Function
+
+
+' 快速查询最后一条记录指定字段值
+Public Function LastValue(ByVal TableName As String, ByVal Field As String, Optional ByVal Condition As String, Optional ByVal OrderField As String) As Variant
+    On Error GoTo ErrorHandler
+    If StringBase.IsWhiteSpace(TableName) Then Exit Function
+    If StringBase.IsWhiteSpace(Field) Then Exit Function
+    If IsMissing(OrderField) Or StringBase.IsWhiteSpace(OrderField) Then
+        If IsMissing(Condition) Or StringBase.IsWhiteSpace(Condition) Then
+            LastValue = Application.DLast(Field, TableName)
+        Else
+            LastValue = Application.DLast(Field, TableName, Condition)
+        End If
+    Else
+        Dim Sql As New SqlBuilder
+        Sql.Top 1
+        Sql.Field Field
+        Sql.From TableName
+        Sql.Where Condition
+        Sql.Order OrderField, True
+        Dim SqlString As String
+        SqlString = Sql.ToSqlString(0)
+        Set Sql = Nothing
+        If Len(SqlString) > 0 Then
+            LastValue = Application.DFirst(Field, SqlString)
+        Else
+            LastValue = Null
+        End If
+    End If
+    Exit Function
+
+ErrorHandler:
+    Call Message.Error(Err)
+    Exit Function
+End Function
+
 
 ' 设置第一条记录的指定字段值
 Public Function SetValue(ByVal TableName As String, ByVal Field As String, ByVal value As Variant, ByVal Condition As String) As Boolean

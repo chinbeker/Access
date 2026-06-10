@@ -550,7 +550,7 @@ Public Function ToSqlString(Optional ByVal Operation As Byte = 0) As String
     Set HavingCollection = Nothing
     Set OrderCollection = Nothing
 
-    MsgBox SqlString
+    'MsgBox SqlString
     ToSqlString = SqlString
     Exit Function
 
