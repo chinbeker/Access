@@ -1,3 +1,4 @@
+Attribute VB_Name = "ArrayBase"
 Option Compare Database
 Option Explicit
 

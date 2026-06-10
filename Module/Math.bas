@@ -1,3 +1,4 @@
+Attribute VB_Name = "Math"
 Option Compare Database
 Option Explicit
 

@@ -1,3 +1,4 @@
+Attribute VB_Name = "HTTP"
 Option Compare Database
 Option Explicit
 

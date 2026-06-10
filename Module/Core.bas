@@ -1,5 +1,7 @@
+Attribute VB_Name = "Core"
 Option Compare Database
 Option Explicit
+
 
 '打开指定窗体（统一验证授权）
 Public Sub OpenForm(ByVal FormName As String, Optional ByVal Condition As String, Optional ByVal OpenArgs As String)

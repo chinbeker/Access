@@ -1,3 +1,4 @@
+Attribute VB_Name = "StringBase"
 Option Compare Database
 Option Explicit
 

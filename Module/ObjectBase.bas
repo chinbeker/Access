@@ -1,3 +1,4 @@
+Attribute VB_Name = "ObjectBase"
 Option Compare Database
 Option Explicit
 

@@ -1,3 +1,4 @@
+Attribute VB_Name = "SqlServer"
 Option Compare Database
 Option Explicit
 
