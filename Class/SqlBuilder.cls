@@ -22,7 +22,7 @@ Private IntoTableName As String
 
 Private FieldCollection As Collection
 Private ValueCollection As Collection
-Private InnerCollection As Collection
+Private JoinCollection As Collection
 Private WhereCollection As Collection
 Private GroupCollection As Collection
 Private HavingCollection As Collection
@@ -99,14 +99,30 @@ Public Sub Into(ByVal TableName As String)
 End Sub
 
 ' 表连接
-Public Sub Inner(ByVal InnerTable As String, ByVal TargetTable As String, ByVal InnerJoinCondition As String, Optional ByVal JoinCondition As String)
+Public Sub Join(ByVal JoinTable As String, ByVal SourceTable As String, ByVal JoinField As String, Optional ByVal SourceField As String = "")
     On Error GoTo ErrorHandler
-    If StringBase.IsWhiteSpace(InnerTable) Then Exit Sub
-    If StringBase.IsWhiteSpace(TargetTable) Then Exit Sub
-    If StringBase.IsWhiteSpace(InnerJoinCondition) Then Exit Sub
-    If IsMissing(JoinCondition) Or StringBase.IsWhiteSpace(JoinCondition) Then JoinCondition = InnerJoinCondition
-    If InnerCollection Is Nothing Then Set InnerCollection = New Collection
-    InnerCollection.Add " INNER JOIN " & InnerTable & " ON " & TargetTable & "." & JoinCondition & "=" & InnerTable & "." & InnerJoinCondition
+    If StringBase.IsWhiteSpace(JoinTable) Then Exit Sub
+    If StringBase.IsWhiteSpace(SourceTable) Then Exit Sub
+    If StringBase.IsWhiteSpace(JoinField) Then Exit Sub
+    If IsMissing(SourceField) Or StringBase.IsWhiteSpace(SourceField) Then SourceField = JoinField
+    If JoinCollection Is Nothing Then Set JoinCollection = New Collection
+    JoinCollection.Add " INNER JOIN " & JoinTable & " ON " & SourceTable & "." & SourceField & "=" & JoinTable & "." & JoinField
+    Exit Sub
+
+ErrorHandler:
+    Call Message.Error(Err)
+    Exit Sub
+End Sub
+
+' 左连接
+Public Sub LeftJoin(ByVal JoinTable As String, ByVal SourceTable As String, ByVal JoinField As String, Optional ByVal SourceField As String = "")
+    On Error GoTo ErrorHandler
+    If StringBase.IsWhiteSpace(JoinTable) Then Exit Sub
+    If StringBase.IsWhiteSpace(SourceTable) Then Exit Sub
+    If StringBase.IsWhiteSpace(JoinField) Then Exit Sub
+    If IsMissing(SourceField) Or StringBase.IsWhiteSpace(SourceField) Then SourceField = JoinField
+    If JoinCollection Is Nothing Then Set JoinCollection = New Collection
+    JoinCollection.Add " LEFT JOIN " & JoinTable & " ON " & SourceTable & "." & SourceField & "=" & JoinTable & "." & JoinField
     Exit Sub
 
 ErrorHandler:
@@ -118,20 +134,20 @@ Private Function ToSourceSqlString(Optional ByVal IsUpdate As Boolean = False) A
     On Error GoTo ErrorHandler
     If HasSource Then
         Dim SourceSqlString As String
-        If Not InnerCollection Is Nothing Then
+        If Not JoinCollection Is Nothing Then
             Dim length As Long
-            length = InnerCollection.Count
+            length = JoinCollection.Count
             If length > 0 Then
                 If length = 1 Then
-                    SourceSqlString = FromTableName & InnerCollection(1)
+                    SourceSqlString = FromTableName & JoinCollection(1)
                 Else
-                    SourceSqlString = "(" & FromTableName & InnerCollection(1) & ")"
+                    SourceSqlString = "(" & FromTableName & JoinCollection(1) & ")"
                     Dim i As Integer
                     For i = 2 To length
                         If i < length Then
-                            SourceSqlString = "(" & SourceSqlString & InnerCollection(i) & ")"
+                            SourceSqlString = "(" & SourceSqlString & JoinCollection(i) & ")"
                         Else
-                            SourceSqlString = SourceSqlString & InnerCollection(i)
+                            SourceSqlString = SourceSqlString & JoinCollection(i)
                         End If
                     Next i
                 End If
@@ -548,28 +564,28 @@ Public Function ToSqlString(Optional ByVal Operation As Byte = 0) As String
     If Operation = 4 Then
         If HasInto And Validation Then
             If HasSource Then
-                SqlString = ToParamDefSqlString & "INSERT INTO " & IntoTableName & " (" & ToFieldSqlString & ") SELECT " & ToValueSqlString & ToSourceSqlString & ";"
+                SqlString = ToParamDefSqlString & "INSERT INTO " & IntoTableName & " (" & ToFieldSqlString & ") SELECT " & ToValueSqlString & ToSourceSqlString
             Else
-                SqlString = ToParamDefSqlString & "INSERT INTO " & IntoTableName & " (" & ToFieldSqlString & ") VALUES (" & ToValueSqlString & ");"
+                SqlString = ToParamDefSqlString & "INSERT INTO " & IntoTableName & " (" & ToFieldSqlString & ") VALUES (" & ToValueSqlString & ")"
             End If
         End If
     '更改
     ElseIf Operation = 3 Then
-        If HasSource And Validation Then SqlString = ToParamDefSqlString & "UPDATE " & ToSourceSqlString(True) & " SET " & ToFieldSqlString(True) & ToWhereSqlString & ";"
+        If HasSource And Validation Then SqlString = ToParamDefSqlString & "UPDATE " & ToSourceSqlString(True) & " SET " & ToFieldSqlString(True) & ToWhereSqlString
     '删除
     ElseIf Operation = 2 Then
-        If HasSource And HasWhere Then SqlString = ToParamDefSqlString & "DELETE" & ToSourceSqlString & ToWhereSqlString & ";"
+        If HasSource And HasWhere Then SqlString = ToParamDefSqlString & "DELETE" & ToSourceSqlString & ToWhereSqlString
     '计数
     ElseIf Operation = 1 Then
-        If HasSource Then SqlString = ToParamDefSqlString & "SELECT COUNT(*)" & ToSourceSqlString & ToWhereSqlString & ";"
+        If HasSource Then SqlString = ToParamDefSqlString & "SELECT COUNT(*)" & ToSourceSqlString & ToWhereSqlString
     '查询
     ElseIf HasField And HasSource Then
-        SqlString = ToParamDefSqlString & "SELECT " & DistinctSqlString & TopSqlString & ToFieldSqlString & ToSourceSqlString & ToWhereSqlString & ToGroupSqlString & ToHavingSqlString & ToOrderSqlString & ";"
+        SqlString = ToParamDefSqlString & "SELECT " & DistinctSqlString & TopSqlString & ToFieldSqlString & ToSourceSqlString & ToWhereSqlString & ToGroupSqlString & ToHavingSqlString & ToOrderSqlString
     End If
 
     Set FieldCollection = Nothing
     Set ValueCollection = Nothing
-    Set InnerCollection = Nothing
+    Set JoinCollection = Nothing
     Set WhereCollection = Nothing
     Set GroupCollection = Nothing
     Set HavingCollection = Nothing
