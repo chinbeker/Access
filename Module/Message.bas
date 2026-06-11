@@ -1,4 +1,6 @@
 Attribute VB_Name = "Message"
+'@Lang VBA
+
 Option Compare Database
 Option Explicit
 

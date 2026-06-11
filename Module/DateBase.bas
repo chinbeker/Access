@@ -1,4 +1,6 @@
 Attribute VB_Name = "DateBase"
+'@Lang VBA
+
 Option Compare Database
 Option Explicit
 
