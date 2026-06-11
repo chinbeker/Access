@@ -710,7 +710,6 @@ Public Function SetValue(ByVal TableName As String, ByVal Field As String, ByVal
     If StringBase.IsWhiteSpace(Field) Then Exit Function
     If StringBase.IsWhiteSpace(Condition) Then Exit Function
     Dim Sql As New SqlBuilder
-    Sql.Top 1
     Sql.From TableName
     Sql.Field Field, value
     Sql.Where Condition

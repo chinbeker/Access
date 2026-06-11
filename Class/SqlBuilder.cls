@@ -49,8 +49,8 @@ Private Function Validation() As Boolean
         Validation = (ValueCollection.Count > 0 And FieldCollection.Count = ValueCollection.Count)
     End If
 End Function
-Private Function HasdInto() As Boolean
-    HasdInto = Not StringBase.IsWhiteSpace(IntoTableName)
+Private Function HasInto() As Boolean
+    HasInto = Not StringBase.IsWhiteSpace(IntoTableName)
 End Function
 Private Function HasSource() As Boolean
     HasSource = Not StringBase.IsWhiteSpace(FromTableName)
@@ -141,6 +141,7 @@ Private Function ToSourceSqlString(Optional ByVal IsUpdate As Boolean = False) A
         Else
             SourceSqlString = FromTableName
         End If
+
         If IsUpdate = False Then SourceSqlString = " FROM " & SourceSqlString
         ToSourceSqlString = SourceSqlString
     End If
@@ -158,27 +159,29 @@ Public Sub Field(ByVal FieldName As String, Optional ByRef value As Variant)
     If StringBase.IsWhiteSpace(FieldName) Then Exit Sub
     If FieldCollection Is Nothing Then Set FieldCollection = New Collection
     FieldCollection.Add FieldName
-
     If Not IsMissing(value) Then
         If ValueCollection Is Nothing Then Set ValueCollection = New Collection
-        If Not StringBase.IsWhiteSpace(value) Then
-            If Left(value, 4) = "[$$]" Then
-                ValueCollection.Add Mid(value, 5)
-            Else
-                ValueCollection.Add "'" & value & "'"
-            End If
-        ElseIf IsDate(value) Then
-            ValueCollection.Add "#" & Format(value, "yyyy-mm-dd") & "#"
-        Else
-            ValueCollection.Add value
-        End If
+        Select Case VBA.VarType(value)
+            Case VBA.vbString
+                If Left(value, 4) = "[$$]" Then
+                    ValueCollection.Add Mid(value, 5)
+                Else
+                    ValueCollection.Add "'" & Replace(value, "'", "''") & "'"
+                End If
+            Case VBA.vbDate
+                ValueCollection.Add "#" & Format(value, "yyyy-mm-dd") & "#"
+            Case VBA.vbNull
+                ValueCollection.Add "NULL"
+            Case Else
+                ValueCollection.Add value
+        End Select
     End If
-    Exit Sub
+    Exit Function
 
 ErrorHandler:
     Call Message.Error(Err)
-    Exit Sub
-End Sub
+    Exit Function
+End Function
 
 Private Function ToFieldSqlString(Optional ByVal IsUpdate As Boolean = False) As String
     On Error GoTo ErrorHandler
@@ -246,17 +249,20 @@ Public Sub Where(ByVal Condition As String, Optional ByRef value As Variant)
     If StringBase.IsWhiteSpace(Condition) Then Exit Sub
     If WhereCollection Is Nothing Then Set WhereCollection = New Collection
     If Not IsMissing(value) Then
-        If Not StringBase.IsWhiteSpace(value) Then
-            If Left(value, 4) = "[$$]" Then
-                WhereCollection.Add Condition & Mid(value, 5)
-            Else
-                WhereCollection.Add Condition & "'" & value & "'"
-            End If
-        ElseIf IsDate(value) Then
-            WhereCollection.Add Condition & "#" & Format(value, "yyyy-mm-dd") & "#"
-        Else
-            WhereCollection.Add Condition & value
-        End If
+        Select Case VBA.VarType(value)
+            Case VBA.vbString
+                If Left(value, 4) = "[$$]" Then
+                    WhereCollection.Add Condition & " " & Mid(value, 5)
+                Else
+                    WhereCollection.Add Condition & " '" & Replace(value, "'", "''") & "'"
+                End If
+            Case VBA.vbDate
+                WhereCollection.Add Condition & " #" & Format(value, "yyyy-mm-dd") & "#"
+            Case VBA.vbNull
+                WhereCollection.Add Condition & " NULL"
+            Case Else
+                WhereCollection.Add Condition & " " & value
+        End Select
     Else
         WhereCollection.Add Condition
     End If
@@ -438,17 +444,20 @@ Public Sub Having(ByVal Condition As String, Optional ByRef value As Variant)
     If StringBase.IsWhiteSpace(Condition) Then Exit Sub
     If HavingCollection Is Nothing Then Set HavingCollection = New Collection
     If Not IsMissing(value) Then
-        If Not StringBase.IsWhiteSpace(value) Then
-            If Left(value, 4) = "[$$]" Then
-                HavingCollection.Add Condition & Mid(value, 5)
-            Else
-                HavingCollection.Add Condition & "'" & value & "'"
-            End If
-        ElseIf IsDate(value) Then
-            HavingCollection.Add Condition & "#" & Format(value, "yyyy-mm-dd") & "#"
-        Else
-            HavingCollection.Add Condition & value
-        End If
+        Select Case VBA.VarType(value)
+            Case VBA.vbString
+                If Left(value, 4) = "[$$]" Then
+                    HavingCollection.Add Condition & " " & Mid(value, 5)
+                Else
+                    HavingCollection.Add Condition & " '" & Replace(value, "'", "''") & "'"
+                End If
+            Case VBA.vbDate
+                HavingCollection.Add Condition & " #" & Format(value, "yyyy-mm-dd") & "#"
+            Case VBA.vbNull
+                HavingCollection.Add Condition & " NULL"
+            Case Else
+                HavingCollection.Add Condition & " " & value
+        End Select
     Else
         HavingCollection.Add Condition
     End If
@@ -537,8 +546,12 @@ Public Function ToSqlString(Optional ByVal Operation As Byte = 0) As String
 
     '新增
     If Operation = 4 Then
-        If HasdInto And Validation Then
-            SqlString = ToParamDefSqlString & "INSERT INTO " & IntoTableName & " (" & ToFieldSqlString & ") SELECT " & ToValueSqlString & ToSourceSqlString & ";"
+        If HasInto And Validation Then
+            If HasSource Then
+                SqlString = ToParamDefSqlString & "INSERT INTO " & IntoTableName & " (" & ToFieldSqlString & ") SELECT " & ToValueSqlString & ToSourceSqlString & ";"
+            Else
+                SqlString = ToParamDefSqlString & "INSERT INTO " & IntoTableName & " (" & ToFieldSqlString & ") VALUES (" & ToValueSqlString & ");"
+            End If
         End If
     '更改
     ElseIf Operation = 3 Then
@@ -548,7 +561,7 @@ Public Function ToSqlString(Optional ByVal Operation As Byte = 0) As String
         If HasSource And HasWhere Then SqlString = ToParamDefSqlString & "DELETE" & ToSourceSqlString & ToWhereSqlString & ";"
     '计数
     ElseIf Operation = 1 Then
-        If HasSource Then SqlString = ToParamDefSqlString & "SELECT " & DistinctSqlString & "COUNT(*)" & ToSourceSqlString & ToWhereSqlString & ";"
+        If HasSource Then SqlString = ToParamDefSqlString & "SELECT COUNT(*)" & ToSourceSqlString & ToWhereSqlString & ";"
     '查询
     ElseIf HasField And HasSource Then
         SqlString = ToParamDefSqlString & "SELECT " & DistinctSqlString & TopSqlString & ToFieldSqlString & ToSourceSqlString & ToWhereSqlString & ToGroupSqlString & ToHavingSqlString & ToOrderSqlString & ";"
