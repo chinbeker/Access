@@ -52,7 +52,7 @@ Public Sub Error(ByRef ErrorObject As Object, Optional ByVal MessageContent As S
             Case 70
                 MsgBox "写入权限被拒绝", vbCritical + vbOKOnly, "系统错误"
             Case 91
-                MsgBox "对象未创建或已被释放", vbCritical + vbOKOnly, "系统错误"
+                MsgBox "对象未初始化或已被释放", vbCritical + vbOKOnly, "系统错误"
             Case 94
                 MsgBox "字段值为 Null", vbCritical + vbOKOnly, "系统错误"
             Case 380
@@ -87,6 +87,8 @@ Public Sub Error(ByRef ErrorObject As Object, Optional ByVal MessageContent As S
                 MsgBox "数据库已被独占打开，请关闭其他程序", vbCritical + vbOKOnly, "系统错误"
             Case 3011
                 MsgBox "表或查询不存在", vbCritical + vbOKOnly, "系统错误"
+            Case 3020
+                MsgBox "更新或取消更新时出错", vbCritical + vbOKOnly, "系统错误"
             Case 3022
                 MsgBox "主键重复", vbCritical + vbOKOnly, "系统错误"
             Case 3031
@@ -154,7 +156,7 @@ Public Sub Error(ByRef ErrorObject As Object, Optional ByVal MessageContent As S
             Case 3420
                 MsgBox "数据类型转换失败", vbCritical + vbOKOnly, "系统错误"
             Case Else
-                MsgBox "错误 [" & ErrorObject.Number & "] : " & ErrorObject.Description, vbCritical + vbOKOnly, "系统错误"
+                MsgBox "未知错误 [" & ErrorObject.Number & "] : " & ErrorObject.Description, vbCritical + vbOKOnly, "系统错误"
         End Select
     End If
     ErrorObject.Clear

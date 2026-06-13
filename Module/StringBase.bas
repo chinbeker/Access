@@ -33,7 +33,7 @@ End Function
 ' 字符串比较（区分大小写）
 Public Function Compare(ByVal str1 As String, ByVal str2 As String) As Boolean
     On Error GoTo ErrorHandler
-    Compare = VBA.StrComp(str1, str2, vbBinaryCompare)
+    Compare = (VBA.StrComp(str1, str2, vbBinaryCompare) = 0)
     Exit Function
 
 ErrorHandler:

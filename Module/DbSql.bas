@@ -28,8 +28,8 @@ Public Function Expression(ByVal expr As String) As String
     Expression = DbSql.Field(expr)
 End Function
 ' 引用参数（拼接SQL字符串时不会加引号）
-Public Function Param(ByVal Name As String) As String
-    If Not StringBase.IsWhiteSpace(Name) Then Param = "[$$][Param_" & Name & "]"
+Public Function Parameter(ByVal Name As String) As String
+    If Not StringBase.IsWhiteSpace(Name) Then Parameter = "[$$][Param_" & Name & "]"
 End Function
 
 
@@ -122,27 +122,23 @@ End Function
 Public Function Insert(ByVal TableName As String, ByRef Sql As SqlBuilder) As Long
     On Error GoTo ErrorHandler
     If StringBase.IsWhiteSpace(TableName) Then Exit Function
-
     Sql.Into TableName
     Dim SqlString As String
     SqlString = Sql.ToSqlString(4)
-
-    If Len(SqlString) > 0 Then
-        Call CreateConnection
-        If Sql.HasParam Then
-            Dim Def As DAO.QueryDef
-            Set Def = DbSql.Database.CreateQueryDef("", SqlString)
-            Sql.SetParam Def
-            Set Sql = Nothing
-            Def.Execute dbFailOnError
-            Insert = Def.RecordsAffected
-            Def.Close
-            Set Def = Nothing
-        Else
-            Set Sql = Nothing
-            DbSql.Database.Execute SqlString
-            Insert = DbSql.Database.RecordsAffected
-        End If
+    Call CreateConnection
+    If Sql.HasParam Then
+        Dim Def As DAO.QueryDef
+        Set Def = DbSql.Database.CreateQueryDef("", SqlString)
+        Sql.SetQueryDef Def
+        Set Sql = Nothing
+        Def.Execute dbFailOnError
+        Insert = Def.RecordsAffected
+        Def.Close
+        Set Def = Nothing
+    Else
+        Set Sql = Nothing
+        DbSql.Database.Execute SqlString
+        Insert = DbSql.Database.RecordsAffected
     End If
     Exit Function
 
@@ -158,22 +154,20 @@ Public Function Update(ByVal TableName As String, ByRef Sql As SqlBuilder) As Lo
     Sql.From TableName
     Dim SqlString As String
     SqlString = Sql.ToSqlString(3)
-    If Len(SqlString) > 0 Then
-        Call CreateConnection
-        If Sql.HasParam Then
-            Dim Def As DAO.QueryDef
-            Set Def = DbSql.Database.CreateQueryDef("", SqlString)
-            Sql.SetParam Def
-            Set Sql = Nothing
-            Def.Execute dbFailOnError
-            Update = Def.RecordsAffected
-            Def.Close
-            Set Def = Nothing
-        Else
-            Set Sql = Nothing
-            DbSql.Database.Execute SqlString
-            Update = DbSql.Database.RecordsAffected
-        End If
+    Call CreateConnection
+    If Sql.HasParam Then
+        Dim Def As DAO.QueryDef
+        Set Def = DbSql.Database.CreateQueryDef("", SqlString)
+        Sql.SetQueryDef Def
+        Set Sql = Nothing
+        Def.Execute dbFailOnError
+        Update = Def.RecordsAffected
+        Def.Close
+        Set Def = Nothing
+    Else
+        Set Sql = Nothing
+        DbSql.Database.Execute SqlString
+        Update = DbSql.Database.RecordsAffected
     End If
     Exit Function
 
@@ -185,28 +179,24 @@ End Function
 ' 删除数据
 Public Function Delete(ByVal TableName As String, ByRef Sql As SqlBuilder) As Long
     On Error GoTo ErrorHandler
-
     If StringBase.IsWhiteSpace(TableName) Then Exit Function
     Sql.From TableName
     Dim SqlString As String
     SqlString = Sql.ToSqlString(2)
-
-    If Len(SqlString) > 0 Then
-        Call CreateConnection
-        If Sql.HasParam Then
-            Dim Def As DAO.QueryDef
-            Set Def = DbSql.Database.CreateQueryDef("", SqlString)
-            Sql.SetParam Def
-            Set Sql = Nothing
-            Def.Execute dbFailOnError
-            Delete = Def.RecordsAffected
-            Def.Close
-            Set Def = Nothing
-        Else
-            Set Sql = Nothing
-            DbSql.Database.Execute SqlString
-            Delete = DbSql.Database.RecordsAffected
-        End If
+    Call CreateConnection
+    If Sql.HasParam Then
+        Dim Def As DAO.QueryDef
+        Set Def = DbSql.Database.CreateQueryDef("", SqlString)
+        Sql.SetQueryDef Def
+        Set Sql = Nothing
+        Def.Execute dbFailOnError
+        Delete = Def.RecordsAffected
+        Def.Close
+        Set Def = Nothing
+    Else
+        Set Sql = Nothing
+        DbSql.Database.Execute SqlString
+        Delete = DbSql.Database.RecordsAffected
     End If
     Exit Function
 
@@ -229,31 +219,26 @@ ErrorHandler:
 End Function
 
 ' 统计数量
-Public Function Count(ByVal TableName As String, ByRef Sql As SqlBuilder) As Long
+Public Function Count(ByRef Sql As SqlBuilder) As Long
     On Error GoTo ErrorHandler
-    If StringBase.IsWhiteSpace(TableName) Then Exit Function
-    Sql.From TableName
     Dim SqlString As String
     SqlString = Sql.ToSqlString(1)
-    If Len(SqlString) > 0 Then
-        Call CreateConnection
-        Dim rs As DAO.Recordset
-        If Sql.HasParam Then
-            Dim Def As DAO.QueryDef
-            Set Def = DbSql.Database.CreateQueryDef("", SqlString)
-            Sql.SetParam Def
-            Set rs = Def.OpenRecordset(dbOpenSnapshot)
-            Def.Close
-            Set Def = Nothing
-        Else
-            Set rs = DbSql.Database.OpenRecordset(SqlString, dbOpenSnapshot)
-        End If
-
-        Set Sql = Nothing
-        Count = rs(0)
-        rs.Close
-        Set rs = Nothing
+    Call CreateConnection
+    Dim rs As DAO.Recordset
+    If Sql.HasParam Then
+        Dim Def As DAO.QueryDef
+        Set Def = DbSql.Database.CreateQueryDef("", SqlString)
+        Sql.SetQueryDef Def
+        Set rs = Def.OpenRecordset(dbOpenSnapshot)
+        Def.Close
+        Set Def = Nothing
+    Else
+        Set rs = DbSql.Database.OpenRecordset(SqlString, dbOpenSnapshot)
     End If
+    Set Sql = Nothing
+    Count = rs(0)
+    rs.Close
+    Set rs = Nothing
     Exit Function
 
 ErrorHandler:
@@ -265,10 +250,7 @@ End Function
 Public Function TableCount(ByVal TableName As String) As Long
     On Error GoTo ErrorHandler
     If StringBase.IsWhiteSpace(TableName) Then Exit Function
-    Dim Sql As New SqlBuilder
-    Sql.SelectAll
-    Sql.From TableName
-    TableCount = DbSql.Count(TableName, Sql)
+    TableCount = Application.DCount("*", TableName)
     Exit Function
 
 ErrorHandler:
@@ -277,26 +259,22 @@ ErrorHandler:
 End Function
 
 ' 返回记录（快照）
-Public Function Find(ByVal TableName As String, ByRef Sql As SqlBuilder) As DAO.Recordset
+Public Function Find(ByRef Sql As SqlBuilder) As DAO.Recordset
     On Error GoTo ErrorHandler
-    If StringBase.IsWhiteSpace(TableName) Then Exit Function
-    Sql.From TableName
     Dim SqlString As String
     SqlString = Sql.ToSqlString(0)
-    If Len(SqlString) > 0 Then
-        Call CreateConnection
-        If Sql.HasParam Then
-            Dim Def As DAO.QueryDef
-            Set Def = DbSql.Database.CreateQueryDef("", SqlString)
-            Sql.SetParam Def
-            Set Sql = Nothing
-            Set Find = Def.OpenRecordset(dbOpenSnapshot)
-            Def.Close
-            Set Def = Nothing
-        Else
-            Set Sql = Nothing
-            Set Find = DbSql.Database.OpenRecordset(SqlString, dbOpenSnapshot)
-        End If
+    Call CreateConnection
+    If Sql.HasParam Then
+        Dim Def As DAO.QueryDef
+        Set Def = DbSql.Database.CreateQueryDef("", SqlString)
+        Sql.SetQueryDef Def
+        Set Sql = Nothing
+        Set Find = Def.OpenRecordset(dbOpenSnapshot)
+        Def.Close
+        Set Def = Nothing
+    Else
+        Set Sql = Nothing
+        Set Find = DbSql.Database.OpenRecordset(SqlString, dbOpenSnapshot)
     End If
     Exit Function
 
@@ -306,26 +284,22 @@ ErrorHandler:
 End Function
 
 ' 返回记录（动态集）
-Public Function Record(ByVal TableName As String, ByRef Sql As SqlBuilder) As DAO.Recordset
+Public Function Record(ByRef Sql As SqlBuilder) As DAO.Recordset
     On Error GoTo ErrorHandler
-    If StringBase.IsWhiteSpace(TableName) Then Exit Function
-    Sql.From TableName
     Dim SqlString As String
     SqlString = Sql.ToSqlString(0)
-    If Len(SqlString) > 0 Then
-        Call CreateConnection
-        If Sql.HasParam Then
-            Dim Def As DAO.QueryDef
-            Set Def = DbSql.Database.CreateQueryDef("", SqlString)
-            Sql.SetParam Def
-            Set Sql = Nothing
-            Set Record = Def.OpenRecordset(dbOpenDynaset, dbSeeChanges)
-            Def.Close
-            Set Def = Nothing
-        Else
-            Set Sql = Nothing
-            Set Record = DbSql.Database.OpenRecordset(SqlString, dbOpenDynaset, dbSeeChanges)
-        End If
+    Call CreateConnection
+    If Sql.HasParam Then
+        Dim Def As DAO.QueryDef
+        Set Def = DbSql.Database.CreateQueryDef("", SqlString)
+        Sql.SetQueryDef Def
+        Set Sql = Nothing
+        Set Record = Def.OpenRecordset(dbOpenDynaset, dbSeeChanges)
+        Def.Close
+        Set Def = Nothing
+    Else
+        Set Sql = Nothing
+        Set Record = DbSql.Database.OpenRecordset(SqlString, dbOpenDynaset, dbSeeChanges)
     End If
     Exit Function
 
@@ -335,32 +309,23 @@ ErrorHandler:
 End Function
 
 ' 第一条记录（快照）
-Public Function First(ByVal TableName As String, Optional ByRef Sql As SqlBuilder) As DAO.Recordset
+Public Function First(ByRef Sql As SqlBuilder) As DAO.Recordset
     On Error GoTo ErrorHandler
-    If StringBase.IsWhiteSpace(TableName) Then Exit Function
-    If IsMissing(Sql) Or Sql Is Nothing Then
-        Set Sql = New SqlBuilder
-        Sql.SelectAll
-    End If
     Sql.Top 1
-    Sql.From TableName
     Dim SqlString As String
     SqlString = Sql.ToSqlString(0)
-
-    If Len(SqlString) > 0 Then
-        Call CreateConnection
-        If Sql.HasParam Then
-            Dim Def As DAO.QueryDef
-            Set Def = DbSql.Database.CreateQueryDef("", SqlString)
-            Sql.SetParam Def
-            Set Sql = Nothing
-            Set First = Def.OpenRecordset(dbOpenSnapshot)
-            Def.Close
-            Set Def = Nothing
-        Else
-            Set Sql = Nothing
-            Set First = DbSql.Database.OpenRecordset(SqlString, dbOpenSnapshot)
-        End If
+    Call CreateConnection
+    If Sql.HasParam Then
+        Dim Def As DAO.QueryDef
+        Set Def = DbSql.Database.CreateQueryDef("", SqlString)
+        Sql.SetQueryDef Def
+        Set Sql = Nothing
+        Set First = Def.OpenRecordset(dbOpenSnapshot)
+        Def.Close
+        Set Def = Nothing
+    Else
+        Set Sql = Nothing
+        Set First = DbSql.Database.OpenRecordset(SqlString, dbOpenSnapshot)
     End If
     Exit Function
 
@@ -370,31 +335,23 @@ ErrorHandler:
 End Function
 
 ' 第一条记录（动态集）
-Public Function FirstRecord(ByVal TableName As String, Optional ByRef Sql As SqlBuilder) As DAO.Recordset
+Public Function FirstRecord(ByRef Sql As SqlBuilder) As DAO.Recordset
     On Error GoTo ErrorHandler
-    If StringBase.IsWhiteSpace(TableName) Then Exit Function
-    If IsMissing(Sql) Or Sql Is Nothing Then
-        Set Sql = New SqlBuilder
-        Sql.SelectAll
-    End If
     Sql.Top 1
-    Sql.From TableName
     Dim SqlString As String
     SqlString = Sql.ToSqlString(0)
-    If Len(SqlString) > 0 Then
-        Call CreateConnection
-        If Sql.HasParam Then
-            Dim Def As DAO.QueryDef
-            Set Def = DbSql.Database.CreateQueryDef("", SqlString)
-            Sql.SetParam Def
-            Set Sql = Nothing
-            Set FirstRecord = Def.OpenRecordset(dbOpenDynaset, dbSeeChanges)
-            Def.Close
-            Set Def = Nothing
-        Else
-            Set Sql = Nothing
-            Set FirstRecord = DbSql.Database.OpenRecordset(SqlString, dbOpenDynaset, dbSeeChanges)
-        End If
+    Call CreateConnection
+    If Sql.HasParam Then
+        Dim Def As DAO.QueryDef
+        Set Def = DbSql.Database.CreateQueryDef("", SqlString)
+        Sql.SetQueryDef Def
+        Set Sql = Nothing
+        Set FirstRecord = Def.OpenRecordset(dbOpenDynaset, dbSeeChanges)
+        Def.Close
+        Set Def = Nothing
+    Else
+        Set Sql = Nothing
+        Set FirstRecord = DbSql.Database.OpenRecordset(SqlString, dbOpenDynaset, dbSeeChanges)
     End If
     Exit Function
 
@@ -405,31 +362,15 @@ End Function
 
 
 ' 表格第一条记录（快照）
-Public Function TableFirst(ByVal TableName As String, Optional ByVal OrderField As String) As DAO.Recordset
+Public Function TableFirst(ByVal TableName As String, Optional ByVal OrderByField As String) As DAO.Recordset
     On Error GoTo ErrorHandler
     If StringBase.IsWhiteSpace(TableName) Then Exit Function
     Dim Sql As New SqlBuilder
-    Sql.Top 1
     Sql.SelectAll
     Sql.From TableName
-    If Not IsMissing(OrderField) And Not StringBase.IsWhiteSpace(OrderField) Then Sql.Order OrderField
-    Dim SqlString As String
-    SqlString = Sql.ToSqlString(0)
-    If Len(SqlString) > 0 Then
-        Call CreateConnection
-        If Sql.HasParam Then
-            Dim Def As DAO.QueryDef
-            Set Def = DbSql.Database.CreateQueryDef("", SqlString)
-            Sql.SetParam Def
-            Set Sql = Nothing
-            Set TableFirst = Def.OpenRecordset(dbOpenSnapshot)
-            Def.Close
-            Set Def = Nothing
-        Else
-            Set Sql = Nothing
-            Set TableFirst = DbSql.Database.OpenRecordset(SqlString, dbOpenSnapshot)
-        End If
-    End If
+    If Not IsMissing(OrderByField) And Not StringBase.IsWhiteSpace(OrderByField) Then Sql.Order OrderByField
+    Set TableFirst = DbSql.First(Sql)
+    Set Sql = Nothing
     Exit Function
 
 ErrorHandler:
@@ -438,31 +379,15 @@ ErrorHandler:
 End Function
 
 ' 表格第一条记录（动态集）
-Public Function TableFirstRecord(ByVal TableName As String, Optional ByVal OrderField As String) As DAO.Recordset
+Public Function TableFirstRecord(ByVal TableName As String, Optional ByVal OrderByField As String) As DAO.Recordset
     On Error GoTo ErrorHandler
     If StringBase.IsWhiteSpace(TableName) Then Exit Function
     Dim Sql As New SqlBuilder
     Sql.SelectAll
-    Sql.Top 1
     Sql.From TableName
-    If Not IsMissing(OrderField) And Not StringBase.IsWhiteSpace(OrderField) Then Sql.Order OrderField
-    Dim SqlString As String
-    SqlString = Sql.ToSqlString(0)
-    If Len(SqlString) > 0 Then
-        Call CreateConnection
-        If Sql.HasParam Then
-            Dim Def As DAO.QueryDef
-            Set Def = DbSql.Database.CreateQueryDef("", SqlString)
-            Sql.SetParam Def
-            Set Sql = Nothing
-            Set TableFirstRecord = Def.OpenRecordset(dbOpenDynaset, dbSeeChanges)
-            Def.Close
-            Set Def = Nothing
-        Else
-            Set Sql = Nothing
-            Set TableFirstRecord = DbSql.Database.OpenRecordset(SqlString, dbOpenDynaset, dbSeeChanges)
-        End If
-    End If
+    If Not IsMissing(OrderByField) And Not StringBase.IsWhiteSpace(OrderByField) Then Sql.Order OrderByField
+    Set TableFirstRecord = DbSql.FirstRecord(Sql)
+    Set Sql = Nothing
     Exit Function
 
 ErrorHandler:
@@ -471,31 +396,15 @@ ErrorHandler:
 End Function
 
 ' 表格最后一条记录（快照）
-Public Function TableLast(ByVal TableName As String, Optional ByVal OrderField As String) As DAO.Recordset
+Public Function TableLast(ByVal TableName As String, Optional ByVal OrderByField As String) As DAO.Recordset
     On Error GoTo ErrorHandler
     If StringBase.IsWhiteSpace(TableName) Then Exit Function
     Dim Sql As New SqlBuilder
     Sql.SelectAll
-    Sql.Top 1
     Sql.From TableName
-    If Not IsMissing(OrderField) And Not StringBase.IsWhiteSpace(OrderField) Then Sql.Order OrderField, True
-    Dim SqlString As String
-    SqlString = Sql.ToSqlString(0)
-    If Len(SqlString) > 0 Then
-        Call CreateConnection
-        If Sql.HasParam Then
-            Dim Def As DAO.QueryDef
-            Set Def = DbSql.Database.CreateQueryDef("", SqlString)
-            Sql.SetParam Def
-            Set Sql = Nothing
-            Set TableLast = Def.OpenRecordset(dbOpenSnapshot)
-            Def.Close
-            Set Def = Nothing
-        Else
-            Set Sql = Nothing
-            Set TableLast = DbSql.Database.OpenRecordset(SqlString, dbOpenSnapshot)
-        End If
-    End If
+    If Not IsMissing(OrderByField) And Not StringBase.IsWhiteSpace(OrderByField) Then Sql.Order OrderByField, True
+    Set TableLast = DbSql.First(Sql)
+    Set Sql = Nothing
     Exit Function
 
 ErrorHandler:
@@ -504,31 +413,15 @@ ErrorHandler:
 End Function
 
 ' 表格最后一条记录（动态集）
-Public Function TableLastRecord(ByVal TableName As String, Optional ByVal OrderField As String) As DAO.Recordset
+Public Function TableLastRecord(ByVal TableName As String, Optional ByVal OrderByField As String) As DAO.Recordset
     On Error GoTo ErrorHandler
     If StringBase.IsWhiteSpace(TableName) Then Exit Function
     Dim Sql As New SqlBuilder
     Sql.SelectAll
-    Sql.Top 1
     Sql.From TableName
-    If Not IsMissing(OrderField) And Not StringBase.IsWhiteSpace(OrderField) Then Sql.Order OrderField, True
-    Dim SqlString As String
-    SqlString = Sql.ToSqlString(0)
-    If Len(SqlString) > 0 Then
-        Call CreateConnection
-        If Sql.HasParam Then
-            Dim Def As DAO.QueryDef
-            Set Def = DbSql.Database.CreateQueryDef("", SqlString)
-            Sql.SetParam Def
-            Set Sql = Nothing
-            Set TableLastRecord = Def.OpenRecordset(dbOpenDynaset, dbSeeChanges)
-            Def.Close
-            Set Def = Nothing
-        Else
-            Set Sql = Nothing
-            Set TableLastRecord = DbSql.Database.OpenRecordset(SqlString, dbOpenDynaset, dbSeeChanges)
-        End If
-    End If
+    If Not IsMissing(OrderByField) And Not StringBase.IsWhiteSpace(OrderByField) Then Sql.Order OrderByField, True
+    Set TableLastRecord = DbSql.FirstRecord(Sql)
+    Set Sql = Nothing
     Exit Function
 
 ErrorHandler:
@@ -538,39 +431,32 @@ End Function
 
 
 ' 获取第一条记录的指定字段值
-Public Function GetValue(ByVal TableName As String, ByRef Sql As SqlBuilder) As Variant
+Public Function GetValue(ByRef Sql As SqlBuilder) As Variant
     On Error GoTo ErrorHandler
-    If StringBase.IsWhiteSpace(TableName) Then Exit Function
     Sql.Top 1
-    Sql.From TableName
     Dim SqlString As String
     SqlString = Sql.ToSqlString(0)
-    If Len(SqlString) > 0 Then
-        Call CreateConnection
-        Dim rs As DAO.Recordset
-
-        If Sql.HasParam Then
-            Dim Def As DAO.QueryDef
-            Set Def = Database.CreateQueryDef("", SqlString)
-            Sql.SetParam Def
-            Set Sql = Nothing
-            Set rs = Def.OpenRecordset(dbOpenSnapshot)
-            Def.Close
-            Set Def = Nothing
-        Else
-            Set Sql = Nothing
-            Set rs = Database.OpenRecordset(SqlString, dbOpenSnapshot)
-        End If
-
-        If Not rs.EOF Then
-            GetValue = rs(0)
-        Else
-            GetValue = Null
-        End If
-
-        rs.Close
-        Set rs = Nothing
+    Call CreateConnection
+    Dim rs As DAO.Recordset
+    If Sql.HasParam Then
+        Dim Def As DAO.QueryDef
+        Set Def = DbSql.Database.CreateQueryDef("", SqlString)
+        Sql.SetQueryDef Def
+        Set Sql = Nothing
+        Set rs = Def.OpenRecordset(dbOpenSnapshot)
+        Def.Close
+        Set Def = Nothing
+    Else
+        Set Sql = Nothing
+        Set rs = DbSql.Database.OpenRecordset(SqlString, dbOpenSnapshot)
     End If
+    If Not rs.EOF Then
+        GetValue = rs(0)
+    Else
+        GetValue = Null
+    End If
+    rs.Close
+    Set rs = Nothing
     Exit Function
 
 ErrorHandler:
@@ -595,8 +481,8 @@ Public Function GetValueFromSql(ByVal SqlString As String) As Variant
 
     rs.Close
     Set rs = Nothing
-
     Exit Function
+
 ErrorHandler:
     Call Message.Error(Err)
     Exit Function
@@ -604,41 +490,25 @@ End Function
 
 
 ' 快速查询记录指定字段值
-Public Function Lookup(ByVal TableName As String, ByVal Field As String, ByVal Condition As String, Optional ByVal OrderField As String) As Variant
+Public Function Lookup(ByVal TableName As String, ByVal Field As String, ByVal Condition As String) As Variant
     On Error GoTo ErrorHandler
     If StringBase.IsWhiteSpace(TableName) Then Exit Function
     If StringBase.IsWhiteSpace(Field) Then Exit Function
     If StringBase.IsWhiteSpace(Condition) Then Exit Function
-    If IsMissing(OrderField) Or StringBase.IsWhiteSpace(OrderField) Then
-        Lookup = Application.DLookup(Field, TableName, Condition)
-    Else
-        Dim Sql As New SqlBuilder
-        Sql.Top 1
-        Sql.Field Field
-        Sql.From TableName
-        Sql.Where Condition
-        Sql.Order OrderField
-        Dim SqlString As String
-        SqlString = Sql.ToSqlString(0)
-        Set Sql = Nothing
-        If Len(SqlString) > 0 Then
-            Lookup = Application.DLookup(Field, SqlString)
-        Else
-            Lookup = Null
-        End If
-    End If
+    Lookup = Application.DLookup(Field, TableName, Condition)
     Exit Function
+
 ErrorHandler:
     Call Message.Error(Err)
     Exit Function
 End Function
 
 ' 快速查询第一条记录指定字段值
-Public Function FirstValue(ByVal TableName As String, ByVal Field As String, Optional ByVal Condition As String, Optional ByVal OrderField As String) As Variant
+Public Function FirstValue(ByVal TableName As String, ByVal Field As String, Optional ByVal Condition As String, Optional ByVal OrderByField As String) As Variant
     On Error GoTo ErrorHandler
     If StringBase.IsWhiteSpace(TableName) Then Exit Function
     If StringBase.IsWhiteSpace(Field) Then Exit Function
-    If IsMissing(OrderField) Or StringBase.IsWhiteSpace(OrderField) Then
+    If IsMissing(OrderByField) Or StringBase.IsWhiteSpace(OrderByField) Then
         If IsMissing(Condition) Or StringBase.IsWhiteSpace(Condition) Then
             FirstValue = Application.DFirst(Field, TableName)
         Else
@@ -650,15 +520,9 @@ Public Function FirstValue(ByVal TableName As String, ByVal Field As String, Opt
         Sql.Field Field
         Sql.From TableName
         Sql.Where Condition
-        Sql.Order OrderField
-        Dim SqlString As String
-        SqlString = Sql.ToSqlString(0)
+        Sql.Order OrderByField
+        FirstValue = DbSql.GetValue(Sql)
         Set Sql = Nothing
-        If Len(SqlString) > 0 Then
-            FirstValue = Application.DFirst(Field, SqlString)
-        Else
-            FirstValue = Null
-        End If
     End If
     Exit Function
 
@@ -669,11 +533,11 @@ End Function
 
 
 ' 快速查询最后一条记录指定字段值
-Public Function LastValue(ByVal TableName As String, ByVal Field As String, Optional ByVal Condition As String, Optional ByVal OrderField As String) As Variant
+Public Function LastValue(ByVal TableName As String, ByVal Field As String, Optional ByVal Condition As String, Optional ByVal OrderByField As String) As Variant
     On Error GoTo ErrorHandler
     If StringBase.IsWhiteSpace(TableName) Then Exit Function
     If StringBase.IsWhiteSpace(Field) Then Exit Function
-    If IsMissing(OrderField) Or StringBase.IsWhiteSpace(OrderField) Then
+    If IsMissing(OrderByField) Or StringBase.IsWhiteSpace(OrderByField) Then
         If IsMissing(Condition) Or StringBase.IsWhiteSpace(Condition) Then
             LastValue = Application.DLast(Field, TableName)
         Else
@@ -681,19 +545,12 @@ Public Function LastValue(ByVal TableName As String, ByVal Field As String, Opti
         End If
     Else
         Dim Sql As New SqlBuilder
-        Sql.Top 1
         Sql.Field Field
         Sql.From TableName
         Sql.Where Condition
-        Sql.Order OrderField, True
-        Dim SqlString As String
-        SqlString = Sql.ToSqlString(0)
+        Sql.Order OrderByField, True
+        LastValue = DbSql.GetValue(Sql)
         Set Sql = Nothing
-        If Len(SqlString) > 0 Then
-            LastValue = Application.DFirst(Field, SqlString)
-        Else
-            LastValue = Null
-        End If
     End If
     Exit Function
 
@@ -715,34 +572,112 @@ Public Function SetValue(ByVal TableName As String, ByVal Field As String, ByVal
     Sql.Where Condition
     Dim SqlString As String
     SqlString = Sql.ToSqlString(3)
-
-    If Len(SqlString) > 0 Then
-        Call CreateConnection
-        Dim Affected As Long
-
-        If Sql.HasParam Then
-            Dim Def As DAO.QueryDef
-            Set Def = DbSql.Database.CreateQueryDef("", SqlString)
-            Sql.SetParam Def
-            Set Sql = Nothing
-            Def.Execute dbFailOnError
-            Affected = Def.RecordsAffected
-            Def.Close
-            Set Def = Nothing
-        Else
-            Set Sql = Nothing
-            DbSql.Database.Execute SqlString
-            Affected = DbSql.Database.RecordsAffected
-        End If
-
-        If Affected > 0 Then
-            SetValue = True
-        Else
-            SetValue = False
-        End If
-
+    Call CreateConnection
+    Dim Affected As Long
+    If Sql.HasParam Then
+        Dim Def As DAO.QueryDef
+        Set Def = DbSql.Database.CreateQueryDef("", SqlString)
+        Sql.SetQueryDef Def
+        Set Sql = Nothing
+        Def.Execute dbFailOnError
+        Affected = Def.RecordsAffected
+        Def.Close
+        Set Def = Nothing
+    Else
+        Set Sql = Nothing
+        DbSql.Database.Execute SqlString
+        Affected = DbSql.Database.RecordsAffected
+    End If
+    If Affected > 0 Then
+        SetValue = True
     Else
         SetValue = False
+    End If
+    Exit Function
+
+ErrorHandler:
+    Call Message.Error(Err)
+    Exit Function
+End Function
+
+' 联合查询（去重）
+Public Function Union(ParamArray SqlBuilders() As Variant) As DAO.Recordset
+    On Error GoTo ErrorHandler
+    Dim length As Long
+    length = UBound(SqlBuilders) - LBound(SqlBuilders) + 1
+
+    If length < 2 Then
+        Err.Raise VBA.vbObjectError + 450, "DbSql.Union", "至少需要两个查询进行 Union"
+        Exit Function
+    End If
+
+    Dim SqlString As String
+    Dim i As Long
+    Dim TempSql As String
+
+    TempSql = SqlBuilders(LBound(SqlBuilders)).ToSqlString(0, False)
+
+    SqlString = TempSql
+    length = UBound(SqlBuilders)
+    For i = (LBound(SqlBuilders) + 1) To length
+        If TypeOf SqlBuilders(i) Is SqlBuilder Then
+            TempSql = SqlBuilders(i).ToSqlString(0, False)
+            SqlString = SqlString & " UNION " & TempSql
+        Else
+            Err.Raise VBA.vbObjectError + 3001, "DbSql.Union", "参数必须是 SqlBuilder 对象类型"
+            Exit Function
+        End If
+    Next i
+
+    If VBA.Len(SqlString) > 0 Then
+        SqlString = SqlString & ";"
+        Call CreateConnection
+        Set UnionAll = DbSql.Database.OpenRecordset(SqlString, dbOpenSnapshot)
+    Else
+        Err.Raise 3075, "DbSql.Union", "SQL 语法错误"
+    End If
+    Exit Function
+
+ErrorHandler:
+    Call Message.Error(Err)
+    Exit Function
+End Function
+
+' 联合查询（有重复）
+Public Function UnionAll(ParamArray SqlBuilders() As Variant) As DAO.Recordset
+    On Error GoTo ErrorHandler
+    Dim length As Long
+    length = UBound(SqlBuilders) - LBound(SqlBuilders) + 1
+
+    If length < 2 Then
+        Err.Raise VBA.vbObjectError + 450, "DbSql.UnionAll", "至少需要两个查询进行 Union"
+        Exit Function
+    End If
+
+    Dim SqlString As String
+    Dim i As Long
+    Dim TempSql As String
+
+    TempSql = SqlBuilders(LBound(SqlBuilders)).ToSqlString(0, False)
+
+    SqlString = TempSql
+    length = UBound(SqlBuilders)
+    For i = (LBound(SqlBuilders) + 1) To length
+        If TypeOf SqlBuilders(i) Is SqlBuilder Then
+            TempSql = SqlBuilders(i).ToSqlString(0, False)
+            SqlString = SqlString & " UNION All " & TempSql
+        Else
+            Err.Raise VBA.vbObjectError + 3001, "DbSql.UnionAll", "参数必须是 SqlBuilder 对象类型"
+            Exit Function
+        End If
+    Next i
+
+    If VBA.Len(SqlString) > 0 Then
+        SqlString = SqlString & ";"
+        Call CreateConnection
+        Set UnionAll = DbSql.Database.OpenRecordset(SqlString, dbOpenSnapshot)
+    Else
+        Err.Raise 3075, "DbSql.UnionAll", "SQL 语法错误"
     End If
     Exit Function
 

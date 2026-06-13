@@ -16,9 +16,11 @@ Option Explicit
 
 Private TopSqlString As String
 Private SelectAllField As Boolean
+Private IsDerivedTable As Boolean
 Private DistinctSqlString As String
 Private FromTableName As String
 Private IntoTableName As String
+Private DerivedTableName As String
 
 Private FieldCollection As Collection
 Private ValueCollection As Collection
@@ -62,6 +64,8 @@ Private Function HasWhere() As Boolean
         HasWhere = (WhereCollection.Count > 0)
     End If
 End Function
+
+'是否使用参数
 Public Function HasParam() As Boolean
     If ParamDefCollection Is Nothing Or ParamTypeCollection Is Nothing Or ParamCollection Is Nothing Then
         HasParam = False
@@ -69,7 +73,10 @@ Public Function HasParam() As Boolean
         HasParam = (ParamDefCollection.Count > 0 And ParamDefCollection.Count = ParamTypeCollection.Count And ParamDefCollection.Count = ParamCollection.Count)
     End If
 End Function
-
+'是否作为派生表（子查询表）
+Public Function HasDerived() As Boolean
+    HasDerived = IsDerivedTable
+End Function
 
 
 '指定记录数
@@ -90,48 +97,89 @@ Public Sub SelectAll(Optional ByVal value As Boolean = True)
 End Sub
 
 
-' 表
-Public Sub From(ByVal TableName As String)
-    If Not StringBase.IsWhiteSpace(TableName) Then FromTableName = TableName
+' 数据源
+Public Sub From(ByRef FromTable As Variant, Optional ByVal Alias As String = "")
+    If VBA.VarType(FromTable) = VBA.vbString And Not StringBase.IsWhiteSpace(FromTable) Then
+        If Not StringBase.IsWhiteSpace(Alias) Then
+            FromTableName = FromTable & " AS " & Alias
+        Else
+            FromTableName = FromTable
+        End If
+    ElseIf TypeOf FromTable Is SqlBuilder Then
+        If Not StringBase.IsWhiteSpace(Alias) Then FromTable.Derived Alias
+        If FromTable.HasDerived Then
+            FromTableName = FromTable.ToSqlString
+        Else
+            Err.Raise VBA.vbObjectError + 3075, "SqlBuilder.From", "子查询必须设置别名"
+        End If
+    Else
+        Err.Raise VBA.vbObjectError + 3075, "SqlBuilder.From", "FROM 语句错误"
+    End If
 End Sub
+
 Public Sub Into(ByVal TableName As String)
     If Not StringBase.IsWhiteSpace(TableName) Then IntoTableName = TableName
 End Sub
 
+Public Function Alias() As String
+    Alias = DerivedTableName
+End Function
+
+'开启子查询的派生表，设置别名
+Public Sub Derived(ByVal Alias As String)
+    If Not StringBase.IsWhiteSpace(Alias) Then
+        IsDerivedTable = True
+        DerivedTableName = Alias
+    Else
+        IsDerivedTable = False
+        DerivedTableName = ""
+    End If
+End Sub
+
+
 ' 表连接
-Public Sub Join(ByVal JoinTable As String, ByVal SourceTable As String, ByVal JoinField As String, Optional ByVal SourceField As String = "")
-    On Error GoTo ErrorHandler
-    If StringBase.IsWhiteSpace(JoinTable) Then Exit Sub
+Public Sub Join(ByRef JoinTable As Variant, ByVal SourceTable As String, ByVal JoinField As String, Optional ByVal SourceField As String = "")
     If StringBase.IsWhiteSpace(SourceTable) Then Exit Sub
     If StringBase.IsWhiteSpace(JoinField) Then Exit Sub
-    If IsMissing(SourceField) Or StringBase.IsWhiteSpace(SourceField) Then SourceField = JoinField
-    If JoinCollection Is Nothing Then Set JoinCollection = New Collection
-    JoinCollection.Add " INNER JOIN " & JoinTable & " ON " & SourceTable & "." & SourceField & "=" & JoinTable & "." & JoinField
-    Exit Sub
+    If StringBase.IsWhiteSpace(SourceField) Then SourceField = JoinField
 
-ErrorHandler:
-    Call Message.Error(Err)
-    Exit Sub
+    If JoinCollection Is Nothing Then Set JoinCollection = New Collection
+
+    If VBA.VarType(JoinTable) = VBA.vbString And Not StringBase.IsWhiteSpace(JoinTable) Then
+        JoinCollection.Add " INNER JOIN " & JoinTable & " ON " & SourceTable & "." & SourceField & "=" & JoinTable & "." & JoinField
+    ElseIf TypeOf JoinTable Is SqlBuilder Then
+        If JoinTable.HasDerived Then
+            JoinCollection.Add " INNER JOIN " & JoinTable.ToSqlString & " ON " & SourceTable & "." & SourceField & "=" & JoinTable.Alias & "." & JoinField
+        Else
+            Err.Raise VBA.vbObjectError + 3075, "SqlBuilder.Join", "子查询必须设置别名"
+        End If
+    Else
+        Err.Raise VBA.vbObjectError + 3075, "SqlBuilder.Join", "INNER JOIN 语句错误"
+    End If
 End Sub
 
 ' 左连接
-Public Sub LeftJoin(ByVal JoinTable As String, ByVal SourceTable As String, ByVal JoinField As String, Optional ByVal SourceField As String = "")
-    On Error GoTo ErrorHandler
-    If StringBase.IsWhiteSpace(JoinTable) Then Exit Sub
+Public Sub LeftJoin(ByRef JoinTable As Variant, ByVal SourceTable As String, ByVal JoinField As String, Optional ByVal SourceField As String = "")
     If StringBase.IsWhiteSpace(SourceTable) Then Exit Sub
     If StringBase.IsWhiteSpace(JoinField) Then Exit Sub
-    If IsMissing(SourceField) Or StringBase.IsWhiteSpace(SourceField) Then SourceField = JoinField
-    If JoinCollection Is Nothing Then Set JoinCollection = New Collection
-    JoinCollection.Add " LEFT JOIN " & JoinTable & " ON " & SourceTable & "." & SourceField & "=" & JoinTable & "." & JoinField
-    Exit Sub
+    If StringBase.IsWhiteSpace(SourceField) Then SourceField = JoinField
 
-ErrorHandler:
-    Call Message.Error(Err)
-    Exit Sub
+    If JoinCollection Is Nothing Then Set JoinCollection = New Collection
+
+    If VBA.VarType(JoinTable) = VBA.vbString And Not StringBase.IsWhiteSpace(JoinTable) Then
+        JoinCollection.Add " LEFT JOIN " & JoinTable & " ON " & SourceTable & "." & SourceField & "=" & JoinTable & "." & JoinField
+    ElseIf TypeOf JoinTable Is SqlBuilder Then
+        If JoinTable.HasDerived Then
+            JoinCollection.Add " LEFT JOIN " & JoinTable.ToSqlString & " ON " & SourceTable & "." & SourceField & "=" & JoinTable.Alias & "." & JoinField
+        Else
+            Err.Raise VBA.vbObjectError + 3075, "SqlBuilder.LeftJoin", "子查询必须设置别名"
+        End If
+    Else
+        Err.Raise VBA.vbObjectError + 3075, "SqlBuilder.LeftJoin", "LEFT JOIN 语句错误"
+    End If
 End Sub
 
 Private Function ToSourceSqlString(Optional ByVal IsUpdate As Boolean = False) As String
-    On Error GoTo ErrorHandler
     If HasSource Then
         Dim SourceSqlString As String
         If Not JoinCollection Is Nothing Then
@@ -142,7 +190,7 @@ Private Function ToSourceSqlString(Optional ByVal IsUpdate As Boolean = False) A
                     SourceSqlString = FromTableName & JoinCollection(1)
                 Else
                     SourceSqlString = "(" & FromTableName & JoinCollection(1) & ")"
-                    Dim i As Integer
+                    Dim i As Long
                     For i = 2 To length
                         If i < length Then
                             SourceSqlString = "(" & SourceSqlString & JoinCollection(i) & ")"
@@ -160,21 +208,21 @@ Private Function ToSourceSqlString(Optional ByVal IsUpdate As Boolean = False) A
 
         If IsUpdate = False Then SourceSqlString = " FROM " & SourceSqlString
         ToSourceSqlString = SourceSqlString
+    Else
+        Err.Raise VBA.vbObjectError + 3078, "SqlBuilder.ToSourceSqlString", "SQL 语法错误"
     End If
-    Exit Function
-
-ErrorHandler:
-    Call Message.Error(Err)
-    Exit Function
 End Function
 
 
 '字段
-Public Sub Field(ByVal FieldName As String, Optional ByRef value As Variant)
-    On Error GoTo ErrorHandler
+Public Sub Field(ByVal FieldName As String, Optional ByRef value As Variant, Optional ByVal Alias As String)
     If StringBase.IsWhiteSpace(FieldName) Then Exit Sub
     If FieldCollection Is Nothing Then Set FieldCollection = New Collection
-    FieldCollection.Add FieldName
+    If Not IsMissing(Alias) And Not StringBase.IsWhiteSpace(Alias) Then
+        FieldCollection.Add FieldName & " AS " & Alias
+    Else
+        FieldCollection.Add FieldName
+    End If
     If Not IsMissing(value) Then
         If ValueCollection Is Nothing Then Set ValueCollection = New Collection
         Select Case VBA.VarType(value)
@@ -192,23 +240,17 @@ Public Sub Field(ByVal FieldName As String, Optional ByRef value As Variant)
                 ValueCollection.Add value
         End Select
     End If
-    Exit Function
-
-ErrorHandler:
-    Call Message.Error(Err)
-    Exit Function
-End Function
+End Sub
 
 Private Function ToFieldSqlString(Optional ByVal IsUpdate As Boolean = False) As String
-    On Error GoTo ErrorHandler
     If HasField Then
         Dim FieldSqlString As String
         If SelectAllField And HasSource Then
             FieldSqlString = FromTableName & ".*"
         ElseIf Not FieldCollection Is Nothing Then
             If FieldCollection.Count > 0 Then
-                Dim i As Integer
-                Dim length As Integer
+                Dim i As Long
+                Dim length As Long
                 length = FieldCollection.Count
                 For i = 1 To length
                     If i < length Then
@@ -226,42 +268,32 @@ Private Function ToFieldSqlString(Optional ByVal IsUpdate As Boolean = False) As
             End If
         End If
         ToFieldSqlString = FieldSqlString
+    Else
+        Err.Raise VBA.vbObjectError + 3085, "SqlBuilder.ToFieldSqlString", "查询字段未定义"
     End If
-    Exit Function
-
-ErrorHandler:
-    Call Message.Error(Err)
-    Exit Function
 End Function
 
 Private Function ToValueSqlString(Optional ByVal IsUpdate As Boolean = False) As String
-    On Error GoTo ErrorHandler
-    If Not ValueCollection Is Nothing Then
-        If ValueCollection.Count > 0 Then
-            Dim i As Integer
-            Dim length As Integer
-            Dim ValueSqlString As String
-            length = ValueCollection.Count
-            For i = 1 To length
-                If i < length Then
-                    ValueSqlString = ValueSqlString & ValueCollection(i) & ", "
-                Else
-                    ValueSqlString = ValueSqlString & ValueCollection(i)
-                End If
-            Next i
-            ToValueSqlString = ValueSqlString
-        End If
+    If Not ValueCollection Is Nothing And ValueCollection.Count > 0 Then
+        Dim i As Long
+        Dim length As Long
+        Dim ValueSqlString As String
+        length = ValueCollection.Count
+        For i = 1 To length
+            If i < length Then
+                ValueSqlString = ValueSqlString & ValueCollection(i) & ", "
+            Else
+                ValueSqlString = ValueSqlString & ValueCollection(i)
+            End If
+        Next i
+        ToValueSqlString = ValueSqlString
+    Else
+        Err.Raise VBA.vbObjectError + 3155, "SqlBuilder.ToValueSqlString", "字段值未定义"
     End If
-    Exit Function
-
-ErrorHandler:
-    Call Message.Error(Err)
-    Exit Function
 End Function
 
 ' 筛选
 Public Sub Where(ByVal Condition As String, Optional ByRef value As Variant)
-    On Error GoTo ErrorHandler
     If StringBase.IsWhiteSpace(Condition) Then Exit Sub
     If WhereCollection Is Nothing Then Set WhereCollection = New Collection
     If Not IsMissing(value) Then
@@ -282,19 +314,13 @@ Public Sub Where(ByVal Condition As String, Optional ByRef value As Variant)
     Else
         WhereCollection.Add Condition
     End If
-    Exit Sub
-
-ErrorHandler:
-    Call Message.Error(Err)
-    Exit Sub
 End Sub
 
 Private Function ToWhereSqlString() As String
-    On Error GoTo ErrorHandler
     If Not WhereCollection Is Nothing Then
         If WhereCollection.Count > 0 Then
-            Dim i As Integer
-            Dim length As Integer
+            Dim i As Long
+            Dim length As Long
             Dim WhereSqlString As String
             length = WhereCollection.Count
             For i = 1 To length
@@ -310,20 +336,18 @@ Private Function ToWhereSqlString() As String
         End If
     End If
     Exit Function
-
-ErrorHandler:
-    Call Message.Error(Err)
-    Exit Function
 End Function
 
 
 ' 参数
 Public Sub Param(ByVal ParamName As String, ByVal value As Variant, Optional ByVal ParamType As String)
-    On Error GoTo ErrorHandler
+    ParamName = Replace(ParamName, " ", "_")
     If StringBase.IsWhiteSpace(ParamName) Then Exit Sub
     If ParamDefCollection Is Nothing Then Set ParamDefCollection = New Collection
     If ParamCollection Is Nothing Then Set ParamCollection = New Collection
     If ParamTypeCollection Is Nothing Then Set ParamTypeCollection = New Collection
+    ParamName = Replace(ParamName, ".", "_")
+    ParamName = Replace(ParamName, "!", "_")
     ParamDefCollection.Add "Param_" & ParamName
     ParamCollection.Add value
 
@@ -357,18 +381,12 @@ Public Sub Param(ByVal ParamName As String, ByVal value As Variant, Optional ByV
     Else
         ParamTypeCollection.Add ParamType
     End If
-
-    Exit Sub
-
-ErrorHandler:
-    Call Message.Error(Err)
-    Exit Sub
 End Sub
-Public Sub SetParam(ByRef Def As DAO.QueryDef)
-    On Error GoTo ErrorHandler
+
+Public Sub SetQueryDef(ByRef Def As DAO.QueryDef)
     If HasParam Then
-        Dim i As Integer
-        Dim length As Integer
+        Dim i As Long
+        Dim length As Long
         length = ParamDefCollection.Count
         For i = 1 To length
             Def.Parameters(ParamDefCollection(i)) = ParamCollection(i)
@@ -377,20 +395,14 @@ Public Sub SetParam(ByRef Def As DAO.QueryDef)
         Set ParamTypeCollection = Nothing
         Set ParamCollection = Nothing
     End If
-    Exit Sub
-
-ErrorHandler:
-    Call Message.Error(Err)
-    Exit Sub
 End Sub
 
 Private Function ToParamDefSqlString() As String
-    On Error GoTo ErrorHandler
     If HasParam Then
         If Not ParamDefCollection Is Nothing Then
             If ParamDefCollection.Count > 0 Then
-                Dim i As Integer
-                Dim length As Integer
+                Dim i As Long
+                Dim length As Long
                 Dim ParamDefSqlString As String
                 length = ParamDefCollection.Count
                 For i = 1 To length
@@ -406,34 +418,22 @@ Private Function ToParamDefSqlString() As String
             End If
         End If
     End If
-    Exit Function
-
-ErrorHandler:
-    Call Message.Error(Err)
-    Exit Function
 End Function
 
 
 ' 分组
 Public Sub Group(ByVal FieldName As String)
-    On Error GoTo ErrorHandler
     If Not StringBase.IsWhiteSpace(FieldName) Then
         If GroupCollection Is Nothing Then Set GroupCollection = New Collection
         GroupCollection.Add FieldName
     End If
-    Exit Sub
-
-ErrorHandler:
-    Call Message.Error(Err)
-    Exit Sub
 End Sub
 
 Private Function ToGroupSqlString() As String
-    On Error GoTo ErrorHandler
     If Not GroupCollection Is Nothing Then
         If GroupCollection.Count > 0 Then
-            Dim i As Integer
-            Dim length As Integer
+            Dim i As Long
+            Dim length As Long
             Dim GroupSqlString As String
             length = GroupCollection.Count
             For i = 1 To length
@@ -447,16 +447,10 @@ Private Function ToGroupSqlString() As String
             ToGroupSqlString = GroupSqlString
         End If
     End If
-    Exit Function
-
-ErrorHandler:
-    Call Message.Error(Err)
-    Exit Function
 End Function
 
 ' 筛选
 Public Sub Having(ByVal Condition As String, Optional ByRef value As Variant)
-    On Error GoTo ErrorHandler
     If StringBase.IsWhiteSpace(Condition) Then Exit Sub
     If HavingCollection Is Nothing Then Set HavingCollection = New Collection
     If Not IsMissing(value) Then
@@ -477,19 +471,13 @@ Public Sub Having(ByVal Condition As String, Optional ByRef value As Variant)
     Else
         HavingCollection.Add Condition
     End If
-    Exit Sub
-
-ErrorHandler:
-    Call Message.Error(Err)
-    Exit Sub
 End Sub
 
 Private Function ToHavingSqlString() As String
-    On Error GoTo ErrorHandler
     If Not HavingCollection Is Nothing Then
         If HavingCollection.Count > 0 Then
-            Dim i As Integer
-            Dim length As Integer
+            Dim i As Long
+            Dim length As Long
             Dim HavingSqlString As String
             length = HavingCollection.Count
             For i = 1 To length
@@ -504,16 +492,10 @@ Private Function ToHavingSqlString() As String
             ToHavingSqlString = HavingSqlString
         End If
     End If
-    Exit Function
-
-ErrorHandler:
-    Call Message.Error(Err)
-    Exit Function
 End Function
 
 '排序
 Public Sub Order(ByVal FieldName As String, Optional ByVal Reverse As Boolean = False)
-    On Error GoTo ErrorHandler
     If StringBase.IsWhiteSpace(FieldName) Then Exit Sub
     If OrderCollection Is Nothing Then Set OrderCollection = New Collection
     If Reverse = True Then
@@ -521,19 +503,13 @@ Public Sub Order(ByVal FieldName As String, Optional ByVal Reverse As Boolean = 
     Else
         OrderCollection.Add FieldName
     End If
-    Exit Sub
-
-ErrorHandler:
-    Call Message.Error(Err)
-    Exit Sub
 End Sub
 
 Private Function ToOrderSqlString() As String
-    On Error GoTo ErrorHandler
     If Not OrderCollection Is Nothing Then
         If OrderCollection.Count > 0 Then
-            Dim i As Integer
-            Dim length As Integer
+            Dim i As Long
+            Dim length As Long
             Dim OrderSqlString As String
             length = OrderCollection.Count
             For i = 1 To length
@@ -547,40 +523,75 @@ Private Function ToOrderSqlString() As String
             ToOrderSqlString = OrderSqlString
         End If
     End If
-    Exit Function
-
-ErrorHandler:
-    Call Message.Error(Err)
-    Exit Function
 End Function
 
 
 ' 拼接sql字符串
-Public Function ToSqlString(Optional ByVal Operation As Byte = 0) As String
-    On Error GoTo ErrorHandler
+Public Function ToSqlString(Optional ByVal Operation As Byte = 0, Optional ByVal Semicolon As Boolean = True) As String
+    Dim EndSemicolon As String
+    If Semicolon Then EndSemicolon = ";"
     Dim SqlString As String
-
-    '新增
-    If Operation = 4 Then
-        If HasInto And Validation Then
-            If HasSource Then
-                SqlString = ToParamDefSqlString & "INSERT INTO " & IntoTableName & " (" & ToFieldSqlString & ") SELECT " & ToValueSqlString & ToSourceSqlString
-            Else
-                SqlString = ToParamDefSqlString & "INSERT INTO " & IntoTableName & " (" & ToFieldSqlString & ") VALUES (" & ToValueSqlString & ")"
-            End If
+    If IsDerivedTable Then
+        If HasField And HasSource Then
+            SqlString = "(" & ToParamDefSqlString & "SELECT " & DistinctSqlString & TopSqlString & ToFieldSqlString & ToSourceSqlString & ToWhereSqlString & ToGroupSqlString & ToHavingSqlString & ToOrderSqlString & ") AS " & DerivedTableName
         End If
-    '更改
-    ElseIf Operation = 3 Then
-        If HasSource And Validation Then SqlString = ToParamDefSqlString & "UPDATE " & ToSourceSqlString(True) & " SET " & ToFieldSqlString(True) & ToWhereSqlString
-    '删除
-    ElseIf Operation = 2 Then
-        If HasSource And HasWhere Then SqlString = ToParamDefSqlString & "DELETE" & ToSourceSqlString & ToWhereSqlString
-    '计数
-    ElseIf Operation = 1 Then
-        If HasSource Then SqlString = ToParamDefSqlString & "SELECT COUNT(*)" & ToSourceSqlString & ToWhereSqlString
-    '查询
-    ElseIf HasField And HasSource Then
-        SqlString = ToParamDefSqlString & "SELECT " & DistinctSqlString & TopSqlString & ToFieldSqlString & ToSourceSqlString & ToWhereSqlString & ToGroupSqlString & ToHavingSqlString & ToOrderSqlString
+    Else
+        '新增
+        If Operation = 4 Then
+            If StringBase.IsWhiteSpace(IntoTableName) Then
+                Err.Raise VBA.vbObjectError + 3155, "SqlBuilder.ToSqlString", "INSERT INTO 语句错误"
+                Exit Function
+            End If
+            If Validation Then
+                If HasSource Then
+                    SqlString = ToParamDefSqlString & "INSERT INTO " & IntoTableName & " (" & ToFieldSqlString & ") SELECT " & ToValueSqlString & ToSourceSqlString & EndSemicolon
+                Else
+                    SqlString = ToParamDefSqlString & "INSERT INTO " & IntoTableName & " (" & ToFieldSqlString & ") VALUES (" & ToValueSqlString & ")" & EndSemicolon
+                End If
+            Else
+                Err.Raise VBA.vbObjectError + 3155, "SqlBuilder.ToSqlString", "INSERT 语句错误"
+                Exit Function
+            End If
+        '更改
+        ElseIf Operation = 3 Then
+            If HasSource Then
+                If Validation Then
+                    SqlString = ToParamDefSqlString & "UPDATE " & ToSourceSqlString(True) & " SET " & ToFieldSqlString(True) & ToWhereSqlString & EndSemicolon
+                Else
+                    Err.Raise VBA.vbObjectError + 3085, "SqlBuilder.ToSqlString", "UPDATE 字段未定义"
+                    Exit Function
+                End If
+            Else
+                Err.Raise VBA.vbObjectError + 3144, "SqlBuilder.ToSqlString", "UPDATE 语句错误"
+                Exit Function
+            End If
+
+            If HasSource And Validation Then SqlString = ToParamDefSqlString & "UPDATE " & ToSourceSqlString(True) & " SET " & ToFieldSqlString(True) & ToWhereSqlString & EndSemicolon
+        '删除
+        ElseIf Operation = 2 Then
+            If HasSource Then
+                If HasWhere Then
+                    SqlString = ToParamDefSqlString & "DELETE" & ToSourceSqlString & ToWhereSqlString & EndSemicolon
+                Else
+                    Err.Raise VBA.vbObjectError + 3075, "SqlBuilder.ToSqlString", "DELETE 必须定义 WHERE 语句"
+                    Exit Function
+                End If
+            Else
+                Err.Raise VBA.vbObjectError + 3078, "SqlBuilder.ToSqlString", "FROM 语句错误"
+                Exit Function
+            End If
+        '计数
+        ElseIf Operation = 1 Then
+            If HasSource Then
+                SqlString = ToParamDefSqlString & "SELECT COUNT(*)" & ToSourceSqlString & ToWhereSqlString & EndSemicolon
+            Else
+                Err.Raise VBA.vbObjectError + 3078, "SqlBuilder.ToSqlString", "FROM 语句错误"
+                Exit Function
+            End If
+        '查询
+        ElseIf HasField And HasSource Then
+            SqlString = ToParamDefSqlString & "SELECT " & DistinctSqlString & TopSqlString & ToFieldSqlString & ToSourceSqlString & ToWhereSqlString & ToGroupSqlString & ToHavingSqlString & ToOrderSqlString & EndSemicolon
+        End If
     End If
 
     Set FieldCollection = Nothing
@@ -592,10 +603,9 @@ Public Function ToSqlString(Optional ByVal Operation As Byte = 0) As String
     Set OrderCollection = Nothing
 
     'MsgBox SqlString
-    ToSqlString = SqlString
-    Exit Function
-
-ErrorHandler:
-    Call Message.Error(Err)
-    Exit Function
+    If VBA.Len(SqlString) > 0 Then
+        ToSqlString = SqlString
+    Else
+        Err.Raise 3075, "SqlBuilder.ToSqlString", "SQL 语法错误"
+    End If
 End Function
