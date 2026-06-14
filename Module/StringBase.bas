@@ -12,9 +12,9 @@ End Function
 ' 判断一个字符串是否为空字符串
 Public Function IsEmpty(ByVal str As Variant) As Boolean
     If VBA.VarType(str) = VBA.vbString Then
-        IsWhiteSpace = (VBA.Len(str) = 0)
+        IsEmpty = (VBA.Len(str) = 0)
     Else
-        IsWhiteSpace = True
+        IsEmpty = True
     End If
 End Function
 
