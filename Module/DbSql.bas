@@ -8,7 +8,7 @@ Attribute VB_Name = "DbSql"
 ' License: MIT
 ' Author: huachen
 ' Version: 1.0.0
-' Created: 2024
+' Created: 2026
 ' Description: Fluent SQL builder and database helper for Access VBA
 ' ============================================================================
 
