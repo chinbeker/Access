@@ -21,7 +21,7 @@ End Function
 
 ' 字符串比较（区分大小写）
 Public Function Equals(ByVal str1 As String, ByVal str2 As String) As Boolean
-    Equals = (VBA.StrComp(str1, str2, vbBinaryEquals) = 0)
+    Equals = (VBA.StrComp(str1, str2, vbBinaryCompare) = 0)
 End Function
 
 ' 字符串长度
@@ -36,7 +36,7 @@ End Function
 ' 判断字符串是否包含子串
 Public Function Contains(ByVal str As Variant, ByVal search As String) As Boolean
     If Not IsNullOrEmpty(str) Then
-        Contains = (VBA.InStr(1, str, search, vbBinaryEquals) > 0)
+        Contains = (VBA.InStr(1, str, search, vbBinaryCompare) > 0)
     Else
         Contains = False
     End If
@@ -46,7 +46,7 @@ End Function
 Public Function IndexOf(ByVal str As Variant, ByVal search As String) As Long
     If Not IsNullOrEmpty(str) Then
         Dim pos As Long
-        pos = VBA.InStr(1, str, search, vbBinaryEquals)
+        pos = VBA.InStr(1, str, search, vbBinaryCompare)
         If pos > 0 Then
             IndexOf = pos - 1
         Else
@@ -61,7 +61,7 @@ End Function
 Public Function LastIndexOf(ByVal str As Variant, ByVal search As String) As Long
     If Not IsNullOrEmpty(str) Then
         Dim pos As Long
-        pos = VBA.InStrRev(str, search, -1, vbBinaryEquals)
+        pos = VBA.InStrRev(str, search, -1, vbBinaryCompare)
         If pos > 0 Then
             LastIndexOf = pos - 1
         Else
@@ -123,7 +123,7 @@ End Function
 ' 字符串替换
 Public Function Replace(ByVal str As Variant, ByVal oldValue As String, ByVal newValue As String) As String
     If Not IsNullOrEmpty(str) Then
-        Replace = VBA.Replace(str, oldValue, newValue, 1, -1, vbBinaryEquals)
+        Replace = VBA.Replace(str, oldValue, newValue, 1, -1, vbBinaryCompare)
     End If
 End Function
 
