@@ -180,11 +180,21 @@ Public Function Trim(ByVal str As Variant) As String
 End Function
 
 
-' 判断一个字符串是否为空字符串
+' 判断一个字符串是否为空白字符串
 Public Function IsNullOrWhiteSpace(ByVal str As Variant) As Boolean
     If Not IsNullOrEmpty(str) Then
         IsNullOrWhiteSpace = (VBA.Len(StringBase.Trim(str)) = 0)
     Else
         IsNullOrWhiteSpace = True
+    End If
+End Function
+
+' 判断一个字符串是否为空字符串，并去除首位空白字符
+Public Function IsNullOrWhiteSpaceAndTrim(ByRef str As Variant) As Boolean
+    If Not IsNullOrEmpty(str) Then
+        str = StringBase.Trim(str)
+        IsNullOrWhiteSpaceAndTrim = (VBA.Len(str) = 0)
+    Else
+        IsNullOrWhiteSpaceAndTrim = True
     End If
 End Function
