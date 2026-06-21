@@ -33,7 +33,6 @@ End Sub
 ' 关闭指定窗体
 Public Sub CloseForm(ByVal FormName As String)
     On Error GoTo ErrorHandler
-    If StringBase.IsNullOrEmpty(FormName) Then Exit Sub
     If IsFormOpen(FormName) Then DoCmd.Close acForm, FormName, acSaveNo
     Exit Sub
 
@@ -45,7 +44,6 @@ End Sub
 '刷新指定窗体的数据
 Public Sub RequeryForm(ByVal FormName As String)
     On Error GoTo ErrorHandler
-    If StringBase.IsNullOrEmpty(FormName) Then Exit Sub
     If IsFormOpen(FormName) Then Forms.Item(FormName).Requery
     Exit Sub
 
@@ -85,3 +83,58 @@ ErrorHandler:
     Call Message.Error(Err)
     Exit Sub
 End Sub
+
+
+'检查某个表是否存在
+Public Function TableExists(ByVal TableName As String) As Boolean
+    On Error Resume Next
+    If Not StringBase.IsNullOrEmpty(TableName) Then
+        Dim tdf As DAO.TableDef
+        Set tdf = Application.CurrentDb.TableDefs(TableName)
+        If Not tdf Is Nothing Then
+            TableExists = (Left(tdf.Name, 4) <> "MSys")
+            Set tdf = Nothing
+        End If
+    End If
+    Err.Clear
+    On Error GoTo 0
+End Function
+
+' 检查某个查询是否存在
+Public Function QueryExists(ByVal QueryName As String) As Boolean
+    On Error Resume Next
+    If Not StringBase.IsNullOrEmpty(QueryName) Then
+        Dim qdf As DAO.QueryDef
+        Set qdf = Application.CurrentDb.QueryDefs(QueryName)
+        QueryExists = Not qdf Is Nothing
+        Set qdf = Nothing
+    End If
+    Err.Clear
+    On Error GoTo 0
+End Function
+
+' 检查某个窗体是否存在
+Public Function FormExists(ByVal FormName As String) As Boolean
+    On Error Resume Next
+    If Not StringBase.IsNullOrEmpty(FormName) Then
+        Dim obj As AccessObject
+        Set obj = Application.CurrentProject.AllForms(FormName)
+        FormExists = Not obj Is Nothing
+        Set obj = Nothing
+    End If
+    Err.Clear
+    On Error GoTo 0
+End Function
+
+' 检查某个报表是否存在
+Public Function ReportExists(ByVal ReportName As String) As Boolean
+    On Error Resume Next
+    If Not StringBase.IsNullOrEmpty(ReportName) Then
+        Dim obj As AccessObject
+        Set obj = Application.CurrentProject.AllReports(ReportName)
+        ReportExists = Not obj Is Nothing
+        Set obj = Nothing
+    End If
+    Err.Clear
+    On Error GoTo 0
+End Function

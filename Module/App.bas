@@ -13,7 +13,7 @@ Public Settings As New Setting       '设置
 
 '已启动
 Public Function AppStarted() As Boolean
-    If GlobalData.GetValue("AppStarted") = True Then
+    If Storage.GetValue("AppStarted") = True Then
         AppStarted = True
     Else
         AppStarted = False
@@ -152,7 +152,7 @@ Public Sub Start()
         DoCmd.LockNavigationPane True
     End If
 
-    GlobalData.SetValue "AppStarted", True
+    Storage.SetValue "AppStarted", True
     Exit Sub
 End Sub
 

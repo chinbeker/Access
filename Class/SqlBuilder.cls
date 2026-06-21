@@ -25,6 +25,42 @@ Option Compare Database
 Option Explicit
 
 
+'SQL DDL 数据类型关键字
+' ---------------------------------------------------------------------------
+' TEXT | CHAR                 短文本（长度）              TEXT(50)
+' MEMO | LONGTEXT             长文本                      MEMO
+' BYTE                        字节型（0-255）             BYTE
+' INTEGER | SHORT             整型（-32768~32767）        INTEGER
+' LONG | INT                  长整型                      LONG
+' SINGLE | REAL               单精度浮点数                SINGLE
+' DOUBLE | FLOAT              双精度浮点数                DOUBLE
+' DECIMAL | NUMERIC           十进制数（精确小数）        DECIMAL(10,2)
+' CURRENCY | MONEY            货币                        CURRENCY
+' DATETIME | DATE             日期/时间                   DATETIME
+' YESNO | BIT | BOOLEAN       是/否                       YESNO
+' BINARY                      二进制（固定长度）          BINARY(50)
+' OLEOBJECT | LONGBINARY      OLE 对象（图片/文件）       OLEOBJECT
+' GUID                        全局唯一标识符              GUID
+' ---------------------------------------------------------------------------
+' Access SQL 标准写法
+' ---------------------------------------------------------------------------
+' TEXT(n)            短文本           TEXT(50)
+' MEMO               长文本           MEMO
+' BYTE               字节型           BYTE
+' INTEGER            整型             INTEGER
+' LONG               长整型           LONG
+' SINGLE             单精度           SINGLE
+' DOUBLE             双精度           DOUBLE
+' DECIMAL(p,s)       十进制           DECIMAL(10,2)
+' CURRENCY           货币             CURRENCY
+' DATETIME           日期/时间        DATETIME
+' YESNO              是/否            YESNO
+' BINARY(n)          二进制           BINARY(50)
+' OLEOBJECT          OLE 对象         OLEOBJECT
+' GUID               GUID             GUID
+' AUTOINCREMENT      自动编号         AUTOINCREMENT
+' ---------------------------------------------------------------------------
+
 Private TopSqlString As String
 Private SelectAllField As Boolean
 Private IsDerivedTable As Boolean
@@ -61,12 +97,8 @@ Private Function IsWhiteSpaceString(ByVal str As Variant) As Boolean
     End If
 End Function
 ' 错误消息
-Private Sub ShowError(ByRef ErrorObject As Object, Optional ByVal Message As String)
-    If Not IsMissing(Message) And Not IsEmptyString(Message) Then
-        MsgBox Message, vbCritical + vbOKOnly, "系统错误"
-    Else
-        MsgBox ErrorObject.Description, vbCritical + vbOKOnly, "系统错误"
-    End If
+Private Sub ShowError(ByRef ErrorObject As Object)
+    MsgBox "发生错误：                         " & vbCrLf & vbCrLf & ErrorObject.Description, vbCritical + vbOKOnly, "系统错误"
 End Sub
 ' 清空
 Private Sub ClearCollections()

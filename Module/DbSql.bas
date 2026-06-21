@@ -36,12 +36,8 @@ Private Function IsWhiteSpaceString(ByVal str As Variant) As Boolean
     End If
 End Function
 ' 错误消息
-Private Sub ShowError(ByRef ErrorObject As Object, Optional ByVal Message As String)
-    If Not IsMissing(Message) And Not IsEmptyString(Message) Then
-        MsgBox Message, vbCritical + vbOKOnly, "系统错误"
-    Else
-        MsgBox ErrorObject.Description, vbCritical + vbOKOnly, "系统错误"
-    End If
+Private Sub ShowError(ByRef ErrorObject As Object)
+    MsgBox "发生错误：                         " & vbCrLf & vbCrLf & ErrorObject.Description, vbCritical + vbOKOnly, "系统错误"
 End Sub
 
 ' 建立数据库连接
@@ -54,6 +50,22 @@ ErrorHandler:
     Call ShowError(Err)
     Exit Sub
 End Sub
+
+'检查表是否存在
+Public Function TableExists(ByVal TableName As String) As Boolean
+    On Error Resume Next
+    If Not StringBase.IsNullOrEmpty(TableName) Then
+        Dim tdf As DAO.TableDef
+        Call CreateConnection
+        Set tdf = Database.TableDefs(TableName)
+        If Not tdf Is Nothing Then
+            TableExists = (Left(tdf.Name, 4) <> "MSys")
+            Set tdf = Nothing
+        End If
+    End If
+    err.Clear
+    On Error GoTo 0
+End Function
 
 ' 引用字段（拼接SQL字符串时不会加引号）
 Public Function Field(ByVal Name As String) As String
@@ -720,5 +732,51 @@ Public Function UnionAll(ParamArray SqlBuilders() As Variant) As DAO.Recordset
 
 ErrorHandler:
     Call ShowError(Err)
+    Exit Function
+End Function
+
+' 创建临时表（克隆目标表的结构）（只能使用ADO，DAO不支持内存临时表）
+Public Function CreateTempTable(ByVal CloneTable As String) As ADODB.Recordset
+    On Error GoTo ErrorHandler
+    Dim source As ADODB.Recordset
+    Dim rs As ADODB.Recordset
+    Dim fieldDef As ADODB.Field
+
+    If Not DbSql.TableExists(CloneTable) Then
+        MsgBox "数据表不存在", vbCritical + vbOKOnly, "系统错误"
+        Set CreateTempTable = Nothing
+        Exit Function
+    End If
+
+    Set source = New ADODB.Recordset
+    source.Open CloneTable, Application.CurrentProject.AccessConnection, adOpenForwardOnly, adLockReadOnly
+
+    Set rs = New ADODB.Recordset
+    rs.CursorLocation = adUseClient
+
+    For Each fieldDef In source.Fields
+        rs.Fields.Append fieldDef.Name, fieldDef.Type, fieldDef.DefinedSize, 106
+        rs.Fields(fieldDef.Name).Precision = fieldDef.Precision
+        rs.Fields(fieldDef.Name).NumericScale = fieldDef.NumericScale
+    Next fieldDef
+
+    rs.Open
+    Set rs.ActiveConnection = Nothing
+    source.Close
+    Set source = Nothing
+    Set CreateTempTable = rs
+    Exit Function
+
+ErrorHandler:
+    MsgBox "创建临时表失败", vbCritical + vbOKOnly, "系统错误"
+    If Not source Is Nothing Then
+        If source.State = adStateOpen Then source.Close
+        Set source = Nothing
+    End If
+    If Not rs Is Nothing Then
+        If rs.State = adStateOpen Then rs.Close
+        Set rs = Nothing
+    End If
+    Set CreateTempTable = Nothing
     Exit Function
 End Function

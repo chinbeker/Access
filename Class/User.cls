@@ -18,9 +18,9 @@ Public UserName As String
 
 'UserId
 Public Property Get UserId() As Long
-    If Not GlobalData.Has("UserId") Then GlobalData.SetValue "UserId", 0
-    UserId = GlobalData.GetValue("UserId")
+    If Not Storage.Has("UserId") Then Storage.SetValue "UserId", 0
+    UserId = Storage.GetValue("UserId")
 End Property
 Public Property Let UserId(ByVal value As Long)
-    GlobalData.SetValue "UserId", value
+    Storage.SetValue "UserId", value
 End Property
