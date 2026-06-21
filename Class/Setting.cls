@@ -16,7 +16,7 @@ Option Explicit
 '年份
 Public Property Get Years() As Long
     If Not Storage.Has("Years") Then
-        If App.DatabaseConnected Then
+        If Auth.Authorized Then
             Storage.SetValue "Years", DbSql.Lookup("Settings", "Years", "[SysId]=1")
         Else
             Storage.SetValue "Years", 0
@@ -33,7 +33,7 @@ End Property
 '月份
 Public Property Get Months() As Long
     If Not Storage.Has("Months") Then
-        If App.DatabaseConnected Then
+        If Auth.Authorized Then
             Storage.SetValue "Months", DbSql.Lookup("Settings", "Months", "[SysId]=1")
         Else
             Storage.SetValue "Months", 0
@@ -50,7 +50,7 @@ End Property
 '工作日ID
 Public Property Get WorkShiftId() As Long
     If Not Storage.Has("WorkShiftId") Then
-        If App.DatabaseConnected Then
+        If Auth.Authorized Then
             Storage.SetValue "WorkShiftId", DbSql.Lookup("Settings", "WorkShiftId", "[SysId]=1")
         Else
             Storage.SetValue "WorkShiftId", 0

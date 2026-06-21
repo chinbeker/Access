@@ -4,7 +4,10 @@ Attribute VB_Name = "Environment"
 Option Compare Database
 Option Explicit
 
-Public Development As Boolean        '开发环境
+'开发环境
+Public Function Development() As Boolean
+    If State.GetValue("Development") = True Then Development = True
+End Function
 
 '生产环境
 Public Function Production() As Boolean

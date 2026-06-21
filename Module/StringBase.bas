@@ -176,7 +176,7 @@ End Function
 
 ' 去除字符串首尾的空白字符
 Public Function Trim(ByVal str As Variant) As String
-    If Not IsNullOrEmpty(str) Then Trim = TrimEnd(TrimStart(str))
+    If Not IsNullOrEmpty(str) Then Trim = TrimEnd(TrimStart(VBA.Trim(str)))
 End Function
 
 

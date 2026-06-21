@@ -18,8 +18,8 @@ End Function
 Public Sub OpenForm(ByVal FormName As String, Optional ByVal Condition As String, Optional ByVal OpenArgs As String)
     On Error GoTo ErrorHandler
     If StringBase.IsNullOrEmpty(FormName) Then Exit Sub
-    If Auth.Authorized = False Then
-        Call Auth.Login(FormName)
+    If Not Auth.Authorized Then
+        Call Auth.RedirectToLogin(FormName)
     Else
         DoCmd.OpenForm FormName, , , Condition, , , OpenArgs
     End If

@@ -17,7 +17,7 @@ Option Explicit
 Private Sub Form_Open(Cancel As Integer)
     If Auth.Authorized = False Then
         Cancel = True
-        Auth.Login Me.name
+        Auth.RedirectToLogin Me.name
     Else
         Me.RecordSource = "Settings"
         Me.Filter = ""
@@ -29,5 +29,5 @@ End Sub
 
 '窗体加载
 Private Sub Form_Load()
-    Me.UserName.value = Auth.LoginUser.UserName
+    Me.UserName.value = Auth.Token.UserName
 End Sub

@@ -18,19 +18,21 @@ Private Sub Form_Open(Cancel As Integer)
     App.Start
 End Sub
 
+' 将焦点移动到密码输入框
 Private Sub Form_Load()
-    ' 将焦点移动到密码输入框
-    If Not IsNull(Me.TextAccount.value) And Len(Me.TextAccount.value) > 0 Then
+    If Not VBA.IsNull(Me.TextAccount.value) And VBA.Len(Me.TextAccount.value) > 0 Then
         Me.TextPassword.SetFocus
     End If
 End Sub
 
+' 退出登录
 Private Sub Form_Close()
-    If Environment.Development = False And Auth.Authorized = False Then
+    If App.Started And Auth.Authenticated = False And Environment.Development = False Then
         Application.Quit
     End If
 End Sub
 
+' 登录按钮
 Private Sub BtnLogin_Click()
     On Error GoTo ErrorHandler
 
@@ -41,36 +43,34 @@ Private Sub BtnLogin_Click()
     Else
         ' 创建SQL生成器
         Dim Sql As New SqlBuilder
-        Sql.Field "UserId"                                 ' 添加查询字段 UserId
-        Sql.Field "UserName"                               ' 添加查询字段 UserName
+        Sql.Field "UserId"                                     ' 添加查询字段 UserId
+        Sql.Field "UserName"                                   ' 添加查询字段 UserName
 
-        Sql.Where "Account=", DbSql.Param("Account")       ' 设置筛选条件： 字段为 Account， 筛选值：名为 Account 的SQL参数
-        Sql.Where "Password=", DbSql.Param("Password")     ' 设置筛选条件： 字段为 Password，筛选值：名为 Password 的SQL参数
+        Sql.Where "Account=", DbSql.Param("Account")           ' 设置筛选条件： 字段为 Account， 筛选值：名为 Account 的SQL参数
+        Sql.Where "Password=", DbSql.Param("Password")         ' 设置筛选条件： 字段为 Password，筛选值：名为 Password 的SQL参数
 
-        Sql.Param "Account", Trim(Me.TextAccount.value)    ' 设置SQL参数 Account 的值
-        Sql.Param "Password", Trim(Me.TextPassword.value)  ' 设置SQL参数 Password 的值
+        Sql.Param "Account", VBA.Trim(Me.TextAccount.value)    ' 设置SQL参数 Account 的值
+        Sql.Param "Password", VBA.Trim(Me.TextPassword.value)  ' 设置SQL参数 Password 的值
 
         Dim SqlRecordSet As DAO.Recordset
-        Set SqlRecordSet = DbSql.First("Users", Sql)       ' 在 Users 表中，执行SQl
+        Set SqlRecordSet = DbSql.First("Users", Sql)           ' 在 Users 表中，执行SQl
 
         If Not SqlRecordSet Is Nothing Then
             If SqlRecordSet.RecordCount > 0 Then
+                ' 用户认证
+                Auth.Token.UserId = SqlRecordSet.Fields.Item(0).value
+                Auth.Token.UserName = SqlRecordSet.Fields.Item(1).value
+                Auth.LoginSuccessful                                    '登录成功
 
-                Auth.LoginUser.UserId = SqlRecordSet.Fields.Item(0).value
-                Auth.LoginUser.UserName = SqlRecordSet.Fields.Item(1).value
-
+                ' 关闭连接
                 SqlRecordSet.Close
                 Set SqlRecordSet = Nothing
 
-                ' 关闭SQL提示
-                DoCmd.SetWarnings (False)
-
                 ' 记住账号
                 Set Sql = New SqlBuilder                                ' 创建新的SQL生成器
-                Sql.Field "Account", Trim(Me.TextAccount.value)
+                Sql.Field "Account", VBA.Trim(Me.TextAccount.value)
                 Sql.Where "Id=", 1
                 DbSql.Update "Login", Sql                               ' 保存登录账号
-
 
                 ' 更新 SQL Server 链接表密码（如果有SQL Servier链接表）
                 'Dim Table As DAO.TableDef
@@ -78,10 +78,9 @@ Private Sub BtnLogin_Click()
                 'Table.Connect = "DSN=MSSQL_ERP;Trusted_Connection=No;UID=erp;PWD=123456;APP=Microsoft Office;DATABASE=erp;Encrypt=Optional;TrustServerCertificate=Yes;"
                 'Table.RefreshLink
                 'Set Table = Nothing
-                App.DatabaseConnected = True
 
 
-                '加载设置
+                ' 加载设置
                 Dim Setting As DAO.Recordset
                 Set Setting = DbSql.First("Settings")
 
@@ -93,6 +92,7 @@ Private Sub BtnLogin_Click()
                 Setting.Close
                 Set Setting = Nothing
 
+                ' 进入首页
                 Dim CurrentForm As Variant
                 CurrentForm = Me.OpenArgs
                 Core.CloseForm Me.name
