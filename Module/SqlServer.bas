@@ -4,46 +4,62 @@ Attribute VB_Name = "SqlServer"
 Option Compare Database
 Option Explicit
 
-'Database Connect
-Private DbConnection As New ADODB.Connection
 
-'Sql Server
-Private Sub CreateConnection()
-    '如果链接关闭，则重新打开链接
+Private DbConnection As New ADODB.Connection
+Private Connected As Boolean
+
+' ODBC
+Private Const ODBC_DSN As String = "MSSQL_ERP"
+Private Const ODBC_DATABASE As String = "erp"
+Private Const ODBC_UID As String = "my"
+Private Const ODBC_PWD As String = "123456"
+
+' OLEDB
+Private Const OLEDB_DataSource As String = "."
+Private Const OLEDB_Database As String = "erp"
+Private Const OLEDB_UserID As String = "my"
+Private Const OLEDB_Password As String = "123456"
+
+'其他
+Private Const Timeout As Long = 3
+
+
+
+' 连接 SQL Servier 数据库
+Private Sub ConnectDatabase()
     On Error GoTo ErrorHandler
-    If DbConnection.State = 0 Then
+    If DbConnection Is Nothing Then Set DbConnection = New ADODB.Connection
+    '如果链接关闭，则重新打开链接
+    If DbConnection.State = adStateClosed Then
         With DbConnection
             .Provider = "MSOLEDBSQL.1"
-
-            ' 方案一、使用系统DSN数据源
-            '.Properties("Data Source").Value = "ERP"
-
-            ' 方案二、使用数据库实例名称
-            '.Properties("Data Source").Value = "COMPUTERNAME\EXPRESS"
-
-            ' 方案三、使用IP地址
-            '.Properties("Network Address").Value = "192.168.101.235"
-
-            ' 方案四、使用本机
-            .Properties("Data Source").value = "."
-
-            .Properties("Initial Catalog").value = "erp"
-            .Properties("User ID").value = "users"
-            .Properties("Password").value = "123456"
-            .Properties("Application Name").value = "Microsoft Access"
-            '.Properties("Connection Timeout").Value = 30
-            .ConnectionTimeout = 3
+            .Properties("Data Source").Value = OLEDB_DataSource
+            .Properties("Initial Catalog").Value = OLEDB_Database
+            .Properties("User ID").Value = OLEDB_UserID
+            .Properties("Password").Value = OLEDB_Password
+            .Properties("Application Name").Value = "Microsoft Access"
+            '.Properties("Connection Timeout").Value = Timeout
+            '.Mode = adModeReadWrite
+            .ConnectionTimeout = Timeout
+            .CommandTimeout = Timeout
             .Open
         End With
     End If
     Exit Sub
 
 ErrorHandler:
-    Call Message.Warning("网络连接中断")
+    'Call Message.Warning("网络连接中断")
+    Call Message.Error(Err)
+    Exit Sub
 End Sub
 
-' 关闭 DbConnection 连接
-Public Sub CloseConnection()
+' 获取ODBC连接字符串
+Private Function GetODBCConnectionString() As String
+    GetODBCConnectionString = "DSN=" & ODBC_DSN & ";Trusted_Connection=No;UID=" & ODBC_UID & ";PWD=" & ODBC_PWD & ";APP=Microsoft Office;DATABASE=" & ODBC_DATABASE & ";Encrypt=Optional;TrustServerCertificate=Yes;"
+End Function
+
+' 断开连接
+Public Sub Disconnect()
     On Error GoTo ErrorHandler
     DbConnection.Close
     Exit Sub
@@ -52,11 +68,31 @@ ErrorHandler:
     Exit Sub
 End Sub
 
+' 更新链接表
+Public Sub LinkToDatabase(ByVal TableName As String)
+    Dim Table As DAO.TableDef
+    If Connected = False And Core.TableExists(TableName) Then
+        Set Table = DbSql.TableDef(TableName)
+        Table.Connect = SqlServer.GetODBCConnectionString
+        Table.RefreshLink
+        Connected = True
+    End If
+    Set Table = Nothing
+End Sub
+
+' 创建传递查询
+Public Function PassThroughQuery(Optional ByVal ReturnsRecords As Boolean = True) As DAO.QueryDef
+    Dim qdf As DAO.QueryDef
+    Set qdf = Application.CurrentDb.CreateQueryDef("")
+    qdf.Connect = "ODBC;" & SqlServer.GetODBCConnectionString
+    qdf.ReturnsRecords = ReturnsRecords
+    Set PassThroughQuery = qdf
+End Function
 
 ' 创建 ADODB.Command 对象 （查询命令）
 Private Function CreateCommand(ByVal cmdText As String, ByVal cmdType As CommandTypeEnum) As ADODB.Command
     On Error GoTo ErrorHandler
-    Call CreateConnection
+    Call ConnectDatabase
     Set CreateCommand = New ADODB.Command
     With CreateCommand
         Set .ActiveConnection = DbConnection
@@ -72,11 +108,11 @@ ErrorHandler:
 End Function
 
 ' 设置 ADODB.Parameter 参数
-Public Sub SetParameter(ByRef Command As ADODB.Command, ByVal name As String, ByVal value As Variant, ByVal DataType As DataTypeEnum, Optional ByVal Size As Long, Optional ByVal Direction As ParameterDirectionEnum = adParamInput)
+Public Sub SetParameter(ByRef Command As ADODB.Command, ByVal name As String, ByVal Value As Variant, ByVal DataType As DataTypeEnum, Optional ByVal size As Long, Optional ByVal Direction As ParameterDirectionEnum = adParamInput)
     On Error GoTo ErrorHandler
-    If StringBase.IsWhiteSpace(name) Then Exit Sub
+    If StringBase.IsNullOrEmpty(name) Then Exit Sub
     If Command Is Nothing Then Exit Sub
-    Call Command.Parameters.Append(Command.CreateParameter(name, DataType, Direction, Size, value))
+    Call Command.Parameters.Append(Command.CreateParameter(name, DataType, Direction, size, Value))
     Exit Sub
 
 ErrorHandler:
@@ -88,10 +124,10 @@ End Sub
 Private Function GetRecordSet(ByVal cmdText As String, ByVal cmdType As CommandTypeEnum) As ADODB.Recordset
     On Error GoTo ErrorHandler
     '检查查询语句（SQL字符串）是否为空，如果为空则退出
-    If StringBase.IsWhiteSpace(cmdText) Then Exit Function
+    If StringBase.IsNullOrEmpty(cmdText) Then Exit Function
 
     '检查链接对象是否处于打开状态，否则与数据库重现建立连接
-    Call CreateConnection
+    Call ConnectDatabase
 
     ' 创建 Command 对象
     Dim Command As ADODB.Command
@@ -117,7 +153,7 @@ End Function
 ' 获取整个表格
 Public Function Table(ByVal TableName As String) As ADODB.Recordset
     On Error GoTo ErrorHandler
-    If StringBase.IsWhiteSpace(TableName) Then Exit Function
+    If StringBase.IsNullOrEmpty(TableName) Then Exit Function
     Set Table = GetRecordSet(TableName, adCmdTable)
     Exit Function
 
@@ -127,10 +163,10 @@ ErrorHandler:
 End Function
 
 ' 运行查询语句
-Public Function Query(ByVal SqlString As String) As ADODB.Recordset
+Public Function query(ByVal SqlString As String) As ADODB.Recordset
     On Error GoTo ErrorHandler
-    If StringBase.IsWhiteSpace(SqlString) Then Exit Function
-    Set Query = GetRecordSet(SqlString, adCmdText)
+    If StringBase.IsNullOrEmpty(SqlString) Then Exit Function
+    Set query = GetRecordSet(SqlString, adCmdText)
     Exit Function
 
 ErrorHandler:
@@ -142,10 +178,10 @@ End Function
 Public Function StoredProc(ByVal storedProcName As String, ByRef Command As ADODB.Command) As ADODB.Recordset
     On Error GoTo ErrorHandler
     '检查存储过程名称是否为空，如果为空则退出
-    If StringBase.IsWhiteSpace(storedProcName) Then Exit Function
+    If StringBase.IsNullOrEmpty(storedProcName) Then Exit Function
 
     '检查链接对象是否处于打开状态，否则与数据库重现建立连接
-    Call CreateConnection
+    Call ConnectDatabase
 
     '检查 Command 对象是否绑定已激活的 Connection 对象
     If Command.ActiveConnection Is Nothing Then Set Command.ActiveConnection = DbConnection

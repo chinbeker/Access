@@ -6,12 +6,12 @@ Option Explicit
 
 '开发环境
 Public Function Development() As Boolean
-    If State.GetValue("Development") = True Then Development = True
+    If Configuration.GetValue("Development") = True Then Development = True
 End Function
 
 '生产环境
 Public Function Production() As Boolean
-    Production = Not Development
+    Production = (Not Environment.Development)
 End Function
 
 '系统桌面路径
@@ -22,6 +22,18 @@ End Function
 '当前安装路径
 Public Function CurrentPath() As String
     CurrentPath = Application.CurrentProject.path & "\"
+End Function
+
+'当前安装路径
+Public Function ParentPath() As String
+    Dim pos As Long
+    Dim path As String
+    path = Application.CurrentProject.path
+    pos = VBA.InStrRev(path, "\")
+    If VBA.Len(path) > 3 And pos > 0 Then
+        path = VBA.Left(path, pos)
+    End If
+    ParentPath = path
 End Function
 
 '计算机名称

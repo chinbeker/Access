@@ -10,6 +10,17 @@ Public Function IsString(ByVal str As Variant) As Boolean
     IsString = (VBA.VarType(str) = VBA.vbString)
 End Function
 
+
+' 判断一个变量是否为字符串或数字类型（数字可以转换为字符串）
+Public Function IsStringOrNumber(ByVal val As Variant) As Boolean
+    Select Case VBA.VarType(val)
+        Case VBA.vbString, VBA.vbInteger, VBA.vbLong, VBA.vbSingle, VBA.vbDouble, VBA.vbCurrency, VBA.vbDecimal, VBA.vbByte
+            IsStringOrNumber = True
+        Case Else
+            IsStringOrNumber = False
+    End Select
+End Function
+
 ' 判断一个字符串是否为空字符串
 Public Function IsNullOrEmpty(ByVal str As Variant) As Boolean
     If VBA.VarType(str) = VBA.vbString Then
@@ -34,19 +45,19 @@ Public Function Length(ByVal str As Variant) As Long
 End Function
 
 ' 判断字符串是否包含子串
-Public Function Contains(ByVal str As Variant, ByVal search As String) As Boolean
+Public Function Contains(ByVal str As Variant, ByVal Search As String) As Boolean
     If Not IsNullOrEmpty(str) Then
-        Contains = (VBA.InStr(1, str, search, vbBinaryCompare) > 0)
+        Contains = (VBA.InStr(1, str, Search, vbBinaryCompare) > 0)
     Else
         Contains = False
     End If
 End Function
 
 ' 查找子串在字符串中第一次出现的位置
-Public Function IndexOf(ByVal str As Variant, ByVal search As String) As Long
+Public Function IndexOf(ByVal str As Variant, ByVal Search As String) As Long
     If Not IsNullOrEmpty(str) Then
         Dim pos As Long
-        pos = VBA.InStr(1, str, search, vbBinaryCompare)
+        pos = VBA.InStr(1, str, Search, vbBinaryCompare)
         If pos > 0 Then
             IndexOf = pos - 1
         Else
@@ -58,10 +69,10 @@ Public Function IndexOf(ByVal str As Variant, ByVal search As String) As Long
 End Function
 
 ' 查找子串在字符串末尾中第一次出现的位置
-Public Function LastIndexOf(ByVal str As Variant, ByVal search As String) As Long
+Public Function LastIndexOf(ByVal str As Variant, ByVal Search As String) As Long
     If Not IsNullOrEmpty(str) Then
         Dim pos As Long
-        pos = VBA.InStrRev(str, search, -1, vbBinaryCompare)
+        pos = VBA.InStrRev(str, Search, -1, vbBinaryCompare)
         If pos > 0 Then
             LastIndexOf = pos - 1
         Else
@@ -74,31 +85,33 @@ End Function
 
 
 '提取字符串
-Public Function Substring(ByVal str As Variant, ByVal start As Long, Optional ByVal Length As Long = -1) As String
+Public Function Substring(ByVal str As Variant, ByVal Start As Long, Optional ByVal Length As Long = -1) As String
     If Not IsNullOrEmpty(str) Then
         Dim strLen As Long
         strLen = VBA.Len(str)
-        If start < 0 Then start = 0
-        If start > strLen Then start = strLen
+
+        If Start < 0 Then Start = 0
+        If Start > strLen Then Start = strLen
+
         If Length < 0 Then
-            Substring = VBA.Mid(str, start + 1)
+            Substring = VBA.Mid(str, Start + 1)
         Else
-            If start + Length <= strLen Then
-                 Substring = VBA.Mid(str, start + 1, Length)
+            If Start + Length <= strLen Then
+                 Substring = VBA.Mid(str, Start + 1, Length)
             Else
-                 Substring = VBA.Mid(str, start + 1)
+                 Substring = VBA.Mid(str, Start + 1)
             End If
         End If
     End If
 End Function
 
 ' 判断字符串是否以指定子串开头（区分大小写）
-Public Function StartsWith(ByVal str As Variant, ByVal value As String) As Boolean
+Public Function StartsWith(ByVal str As Variant, ByVal Value As String) As Boolean
     If Not IsNullOrEmpty(str) Then
         Dim ValueLength As Long
-        ValueLength = VBA.Len(value)
+        ValueLength = VBA.Len(Value)
         If ValueLength > 0 Then
-            StartsWith = Equals(VBA.Left(str, ValueLength), value)
+            StartsWith = Equals(VBA.Left(str, ValueLength), Value)
         Else
             StartsWith = True
         End If
@@ -107,12 +120,12 @@ End Function
 
 
 ' 判断字符串是否以指定子串结尾（区分大小写）
-Public Function EndsWith(ByVal str As Variant, ByVal value As String) As Boolean
+Public Function EndsWith(ByVal str As Variant, ByVal Value As String) As Boolean
     If Not IsNullOrEmpty(str) Then
         Dim ValueLength As Long
-        ValueLength = VBA.Len(value)
+        ValueLength = VBA.Len(Value)
         If ValueLength > 0 Then
-            EndsWith = Equals(VBA.Right(str, ValueLength), value)
+            EndsWith = Equals(VBA.Right(str, ValueLength), Value)
         Else
             EndsWith = True
         End If
@@ -136,7 +149,6 @@ End Function
 Public Function ToLower(ByVal str As Variant) As String
     If Not IsNullOrEmpty(str) Then ToLower = VBA.LCase(str)
 End Function
-
 
 ' 去除字符串开头的空白字符
 Public Function TrimStart(ByVal str As Variant) As String

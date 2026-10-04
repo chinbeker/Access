@@ -15,31 +15,45 @@ End Function
 
 
 ' 返回数组长度
-Function length(ByRef arr As Variant) As Long
+Public Function Length(ByRef arr As Variant) As Long
     If Not IsArray(arr) Then
-        length = -1
+        Length = -1
     Else
         On Error Resume Next
-        length = UBound(arr) - LBound(arr) + 1
+        Length = UBound(arr) - LBound(arr) + 1
     End If
 End Function
 
-' 字符串拼接
-Function Join(ByRef arr As Variant, Optional ByVal separator As String = ",") As String
-    Dim text As String
-    If Not IsEmpty(arr) Then
+
+' 数组拼接成字符串
+Public Function Join(ByVal arr As Variant, Optional ByVal separator As String) As String
+    If VBA.IsMissing(separator) Or VBA.Len(separator) = 0 Then separator = ","
+    If Not ArrayBase.IsEmpty(arr) Then
+        Dim text As String
+        Dim Value As String
         Dim i As Long
-        Dim length As Long
+        Dim count As Long
 
-        length = UBound(arr) - LBound(arr) + 1
+        count = UBound(arr) - LBound(arr)
+        If count > 0 Then
+            For i = LBound(arr) To UBound(arr)
 
-        For i = LBound(arr) To UBound(arr)
-            If i < length Then
-                text = text & arr(i) & separator
-            Else
-                text = text & arr(i)
-            End If
-        Next i
+                Select Case VBA.VarType(arr(i))
+                    Case VBA.vbString
+                        Value = arr(i)
+                    Case VBA.vbInteger, VBA.vbLong, VBA.vbSingle, VBA.vbDouble, VBA.vbCurrency, VBA.vbDecimal, VBA.vbByte, VBA.vbBoolean
+                        Value = VBA.CStr(arr(i))
+                    Case VBA.vbDate
+                        Value = "#" & VBA.Format(arr(i), "yyyy-mm-dd") & "#"
+                End Select
+
+                If i < count Then
+                    text = text & Value & separator
+                Else
+                    text = text & Value
+                End If
+            Next i
+            Join = text
+        End If
     End If
-    Join = text
 End Function

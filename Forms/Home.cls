@@ -29,5 +29,5 @@ End Sub
 
 '窗体加载
 Private Sub Form_Load()
-    Me.UserName.value = Auth.Token.UserName
+    Me.UserName.Value = Token.UserName
 End Sub

@@ -5,26 +5,36 @@ Option Compare Database
 Option Explicit
 
 '确认
-Public Sub Alert(ByVal MessageContent As String)
+Public Sub Alert(ByVal MessageContent As String, Optional ByVal EnableProgress As Boolean)
+    MsgBox MessageContent, vbExclamation + vbOKOnly, App.AppTitle
+    If EnableProgress Then Call Progress.Complete
+End Sub
+
+'信息
+Public Sub Notice(ByVal MessageContent As String, Optional ByVal EnableProgress As Boolean)
     MsgBox MessageContent, vbInformation + vbOKOnly, App.AppTitle
+    If EnableProgress Then Call Progress.Complete
 End Sub
 
 '警告
-Public Sub Warning(ByVal MessageContent As String)
+Public Sub Warning(ByVal MessageContent As String, Optional ByVal EnableProgress As Boolean)
     MsgBox MessageContent, vbCritical + vbOKOnly, App.AppTitle
+    If EnableProgress Then Call Progress.Complete
 End Sub
 
 '确认+取消
-Public Function Confirm(ByVal MessageContent As String) As Boolean
-    If MsgBox(MessageContent, vbQuestion + vbOKCancel, App.AppTitle) = vbOK Then
+Public Function Confirm(ByVal MessageContent As String, Optional ByVal EnableProgress As Boolean) As Boolean
+    VBA.Beep
+    If MsgBox(MessageContent, vbQuestion + vbOKCancel, App.AppTitle) = VBA.vbOK Then
         Confirm = True
     Else
         Confirm = False
     End If
+    If EnableProgress Then Call Progress.Complete
 End Function
 
 '错误提示
-Public Sub Error(ByRef ErrorObject As Object)
+Public Sub Error(ByRef ErrorObject As Object, Optional ByVal EnableProgress As Boolean)
     Select Case ErrorObject.Number
         Case 5
             MsgBox "无效的过程调用", vbCritical + vbOKOnly, "系统错误"
@@ -109,7 +119,7 @@ Public Sub Error(ByRef ErrorObject As Object)
         Case 3078
             MsgBox "表或查询不存在", vbCritical + vbOKOnly, "系统错误"
         Case 3075
-            MsgBox "SQL 语法错误", vbCritical + vbOKOnly, "系统错误"
+            MsgBox "SQL 语句语法错误", vbCritical + vbOKOnly, "系统错误"
         Case 3085
             MsgBox "字段未定义", vbCritical + vbOKOnly, "系统错误"
         Case 3086
@@ -155,7 +165,8 @@ Public Sub Error(ByRef ErrorObject As Object)
         Case 3420
             MsgBox "数据类型转换失败", vbCritical + vbOKOnly, "系统错误"
         Case Else
-            MsgBox "发生错误 [" & ErrorObject.Number & "] :                         " & vbCrLf & vbCrLf & ErrorObject.Description, vbCritical + vbOKOnly, "系统错误"
+            MsgBox "发生错误 [" & ErrorObject.Number & "] :                           " & vbCrLf & vbCrLf & ErrorObject.Description, vbCritical + vbOKOnly, "系统错误"
     End Select
     ErrorObject.Clear
+    If EnableProgress Then Call Progress.Complete
 End Sub

@@ -4,33 +4,34 @@ Attribute VB_Name = "Storage"
 Option Compare Database
 Option Explicit
 
-Private Function GenerateKey(ByVal key As String) As String
-    GenerateKey = "Global_" & key
-End Function
-
 '读取
-Public Function GetValue(ByVal key As String) As Variant
-    If StringBase.IsNullOrEmpty(key) Then GetValue = Null
-    GetValue = Application.TempVars.Item(key).value
+Public Function GetValue(ByVal Key As String, Optional ByVal DefaultValue As Variant) As Variant
+    GetValue = Null
+    If VBA.Len(Key) = 0 Then Exit Function
+    Dim Value As Variant
+    Value = Application.TempVars.Item(Key).Value
+    If VBA.IsNull(Value) Then
+        If Not VBA.IsMissing(DefaultValue) Then GetValue = DefaultValue
+    Else
+        GetValue = Value
+    End If
 End Function
 
 '赋值
-Public Sub SetValue(ByVal key As String, ByRef value As Variant)
-    If Storage.Has(key) Then
-        Application.TempVars.Item(key).value = value
-    Else
-        Application.TempVars.Add key, value
-    End If
-End Sub
+Public Function SetValue(ByVal Key As String, ByVal Value As Variant) As Boolean
+    If VBA.Len(Key) = 0 Then Exit Function
+    Application.TempVars(Key) = Value
+    SetValue = True
+End Function
 
 '判断
-Public Function Has(ByVal key As String) As Boolean
-    If StringBase.IsNullOrEmpty(key) Then Has = False
-    Has = Not VBA.IsNull(Application.TempVars.Item(key).value)
+Public Function Has(ByVal Key As String) As Boolean
+    If VBA.Len(Key) = 0 Then Exit Function
+    Has = (Not VBA.IsNull(Application.TempVars.Item(Key).Value))
 End Function
 
 '删除
-Public Sub Remove(ByVal key As String)
-    If StringBase.IsNullOrEmpty(key) Then Exit Sub
-    If Storage.Has(key) Then Application.TempVars.Remove key
+Public Sub Remove(ByVal Key As String)
+    If VBA.Len(Key) = 0 Then Exit Sub
+    If Storage.Has(Key) Then Application.TempVars.Remove Key
 End Sub

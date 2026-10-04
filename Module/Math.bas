@@ -41,23 +41,42 @@ End Function
 Function Average(ParamArray values() As Variant) As Variant
     Dim i As Integer
     Dim sum As Double
-    Dim Count As Integer
+    Dim count As Integer
 
     sum = 0
-    Count = 0
+    count = 0
 
     ' 累加有效数值
     For i = LBound(values) To UBound(values)
         If IsNumeric(values(i)) And Not IsNull(values(i)) Then
             sum = sum + CDbl(values(i))
-            Count = Count + 1
+            count = count + 1
         End If
     Next i
 
     ' 返回平均值
-    If Count > 0 Then
-        Average = sum / Count
+    If count > 0 Then
+        Average = sum / count
     Else
         Average = Null
     End If
+End Function
+
+' 生成范围内的随机整数（包含边界）
+Public Function Random(ByVal Min As Long, ByVal Max As Long) As Long
+    If Max > Min Then
+        Random = VBA.Int((Max - Min + 1) * VBA.Rnd + Min)
+    Else
+        Random = Min
+    End If
+End Function
+
+' 偶数
+Public Function IsEven(ByVal n As Long) As Boolean
+    IsEven = (n Mod 2 = 0)
+End Function
+
+' 奇数
+Public Function IsOdd(ByVal n As Long) As Boolean
+    IsOdd = (n Mod 2 <> 0)
 End Function

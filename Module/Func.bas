@@ -1,4 +1,4 @@
-Attribute VB_Name = "Utility"
+Attribute VB_Name = "Func"
 '@Lang VBA
 
 Option Compare Database
