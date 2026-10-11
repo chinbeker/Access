@@ -68,7 +68,7 @@ Private Function LoadUserSetting() As Boolean
     If Bootstrap.UseSqlServer = True Then Call SqlServer.LinkToDatabase("dbo_Settings")
     DbSql.UseDefaultDatabase
 
-    Set tSetting = DbSql.TableFirst("dbo_Settings")
+    Set tSetting = DbSql.TableFirst("dbo_Settings", , True)
     If Not tSetting Is Nothing Then
         If tSetting.RecordCount > 0 Then
 

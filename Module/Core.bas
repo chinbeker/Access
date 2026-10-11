@@ -25,7 +25,7 @@ Public Sub OpenForm(ByVal FormName As String, Optional ByVal Condition As String
     Exit Sub
 
 ErrorHandler:
-    Call Message.Warning("打开失败:                                                  " & vbCrLf & vbCrLf & "窗体 " & FormName & " 未找到")
+    Err.Raise 2102, "Core.OpenForm", "打开失败:                                                  " & vbCrLf & vbCrLf & "窗体 " & FormName & " 未找到"
     Exit Sub
 End Sub
 
@@ -36,13 +36,13 @@ Public Sub CloseForm(ByVal FormName As String)
     Exit Sub
 
 ErrorHandler:
-    Call Message.Error(Err)
+    Err.Raise Err.Number, "Core.CloseForm", Err.Description
     Exit Sub
 End Sub
 
 '获取指定窗体（已打开）
 Public Function GetForm(ByVal FormName As String) As Form
-    If Core.IsFormOpen(FormName) Then
+    If IsFormOpen(FormName) Then
         Set GetForm = Forms.Item(FormName)
     Else
         Set GetForm = Nothing
@@ -51,19 +51,12 @@ End Function
 
 ' 激活指定窗体
 Public Sub FormSetFocus(ByVal FormName As String)
-    On Error GoTo ErrorHandler
     If IsFormOpen(FormName) Then Forms.Item(FormName).SetFocus
-    Exit Sub
-
-ErrorHandler:
-    Call Message.Error(Err)
-    Exit Sub
 End Sub
 
 
 ' 跳转到指定记录
 Public Function GoToRecord(ByVal FormName As String, ByVal Criteria As String) As Boolean
-    On Error GoTo ErrorHandler
     If Not IsFormOpen(FormName) Then Exit Function
 
     Dim Target As Form
@@ -89,23 +82,11 @@ Public Function GoToRecord(ByVal FormName As String, ByVal Criteria As String) A
     rs.Close
     Set Target = Nothing
     Set rs = Nothing
-    Exit Function
-
-ErrorHandler:
-    Call Message.Error(Err)
-    If Not Target Is Nothing Then Set Target = Nothing
-    If Not rs Is Nothing Then
-        rs.Close
-        Set rs = Nothing
-    End If
-    Exit Function
 End Function
 
 
 '重新查询指定窗体的数据
 Public Sub RequeryForm(ByVal FormName As String, Optional ByVal Criteria As String, Optional ByVal Focus As Boolean = False)
-    On Error GoTo ErrorHandler
-
     If Not IsFormOpen(FormName) Then Exit Sub
 
     Dim Target As Form
@@ -135,21 +116,10 @@ Public Sub RequeryForm(ByVal FormName As String, Optional ByVal Criteria As Stri
 
     If Focus Then Target.SetFocus
     Set Target = Nothing
-    Exit Sub
-
-ErrorHandler:
-    Call Message.Error(Err)
-    Set Target = Nothing
-    If Not rs Is Nothing Then
-        rs.Close
-        Set rs = Nothing
-    End If
-    Exit Sub
 End Sub
 
 '刷新指定窗体
 Public Sub RefreshForm(ByVal FormName As String, Optional ByVal Bookmark As Boolean = False, Optional ByVal Focus As Boolean = False)
-    On Error GoTo ErrorHandler
     If Not IsFormOpen(FormName) Then Exit Sub
 
     Dim Target As Form
@@ -167,12 +137,6 @@ Public Sub RefreshForm(ByVal FormName As String, Optional ByVal Bookmark As Bool
 
     If Focus Then Target.SetFocus
     Set Target = Nothing
-    Exit Sub
-
-ErrorHandler:
-    Call Message.Error(Err)
-    Set Target = Nothing
-    Exit Sub
 End Sub
 
 
@@ -255,7 +219,7 @@ Public Sub ExportTable(ByVal TableName As String, ByVal filename As String)
 ErrorHandler:
     DoCmd.Hourglass False
     Call Progress.Complete
-    Call Message.Error(Err)
+    Call Message.Error(Err, True)
     Exit Sub
 End Sub
 
@@ -279,7 +243,7 @@ Public Sub ExportQuery(ByVal QueryName As String, ByVal filename As String)
 ErrorHandler:
     DoCmd.Hourglass False
     Call Progress.Complete
-    Call Message.Error(Err)
+    Call Message.Error(Err, True)
     Exit Sub
 End Sub
 
@@ -319,9 +283,9 @@ Public Function ExportRecordset(ByRef rs As DAO.Recordset, ByVal SheetName As St
     Dim fieldCount As Integer
     Dim captionCount As Integer
 
-    fieldCount = rs.Fields.count
+    fieldCount = rs.Fields.Count
     Has = Not VBA.IsMissing(FieldCaptions)
-    If Has Then captionCount = FieldCaptions.count
+    If Has And Not FieldCaptions Is Nothing Then captionCount = FieldCaptions.Count
 
     Progress.Run 45
     For i = 1 To fieldCount
@@ -365,9 +329,7 @@ ErrorHandler:
     Set xlWorkbook = Nothing
     Set xlApp = Nothing
     DoCmd.Hourglass False
-    Call Progress.Complete
-    Message.Warning "数据导出失败"
-    Call Message.Error(Err)
+    Call Message.Error(Err, True)
     ExportRecordset = False
 End Function
 
@@ -433,8 +395,6 @@ End Function
 
 ' 选择文件，返回文件路径
 Public Function SelectFile(Optional ByVal DialogTitle As String, Optional ByVal Filter As String, Optional ByVal FilterTitle As String) As String
-    On Error GoTo ErrorHandler
-
     Dim Dialog As Object
     Dim path As String
 
@@ -458,19 +418,11 @@ Public Function SelectFile(Optional ByVal DialogTitle As String, Optional ByVal 
     End With
     If VBA.Len(path) > 0 Then Cache.SelectFolder = GetParentPath(path)
     SelectFile = path
-
-    Set Dialog = Nothing
-    Exit Function
-
-ErrorHandler:
-    Call Message.Error(Err)
-    SelectFile = ""
     Set Dialog = Nothing
 End Function
 
 '创建文件夹
 Public Function CreateFolder(ByVal FolderPath As String) As Boolean
-    On Error GoTo ErrorHandler
     If FolderPath = "" Then Exit Function
     Dim path As String
     path = FolderPath
@@ -481,17 +433,10 @@ Public Function CreateFolder(ByVal FolderPath As String) As Boolean
     If ParentPath <> "" Then CreateFolder ParentPath
     CreateFolder = True
     VBA.MkDir path
-
-    Exit Function
-
-ErrorHandler:
-    CreateFolder = False
-    Call Message.Error(Err)
 End Function
 
 ' 复制文件
 Public Function CopyFile(ByVal SourcePath As String, ByVal DestPath As String) As Boolean
-    On Error GoTo ErrorHandler
     If SourcePath = DestPath Then Exit Function
     If Not FileExists(SourcePath) Then
         Message.Warning "源文件不存在：" & SourcePath
@@ -506,9 +451,4 @@ Public Function CopyFile(ByVal SourcePath As String, ByVal DestPath As String) A
 
     VBA.FileCopy SourcePath, DestPath
     CopyFile = True
-    Exit Function
-
-ErrorHandler:
-    Call Message.Error(Err)
-    Exit Function
 End Function

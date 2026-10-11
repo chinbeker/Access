@@ -44,10 +44,16 @@ Public Sub Error(ByRef ErrorObject As Object, Optional ByVal EnableProgress As B
             MsgBox "内存不足", vbCritical + vbOKOnly, "系统错误"
         Case 9
             MsgBox "数组下标越界", vbCritical + vbOKOnly, "系统错误"
+        Case 11
+            MsgBox "除零错误", vbCritical + vbOKOnly, "系统错误"
         Case 13
             MsgBox "类型不匹配", vbCritical + vbOKOnly, "系统错误"
+        Case 20
+            MsgBox "无错误恢复", vbCritical + vbOKOnly, "系统错误"
+        Case 52
+            MsgBox "错误的文件名", vbCritical + vbOKOnly, "系统错误"
         Case 53
-            MsgBox "文件未找到，请检查路径", vbCritical + vbOKOnly, "系统错误"
+            MsgBox "文件未找到", vbCritical + vbOKOnly, "系统错误"
         Case 55
             MsgBox "文件已打开，请先关闭", vbCritical + vbOKOnly, "系统错误"
         Case 58
@@ -64,6 +70,10 @@ Public Sub Error(ByRef ErrorObject As Object, Optional ByVal EnableProgress As B
             MsgBox "字段值为 Null", vbCritical + vbOKOnly, "系统错误"
         Case 380
             MsgBox "属性值无效", vbCritical + vbOKOnly, "系统错误"
+        Case 381
+            MsgBox "无效的属性数组索引", vbCritical + vbOKOnly, "系统错误"
+        Case 424
+            MsgBox "需要对象", vbCritical, "系统错误"
         Case 438
             MsgBox "对象不支持此属性或方法", vbCritical, "系统错误"
         Case 444
@@ -77,7 +87,7 @@ Public Sub Error(ByRef ErrorObject As Object, Optional ByVal EnableProgress As B
         Case 448
             MsgBox "未找到指定参数", vbCritical + vbOKOnly, "系统错误"
         Case 449
-            MsgBox "参数值无效或属性不存在", vbCritical + vbOKOnly, "系统错误"
+            MsgBox "参数值无效", vbCritical + vbOKOnly, "系统错误"
         Case 450
             MsgBox "参数数量或类型错误", vbCritical + vbOKOnly, "系统错误"
         Case 451
@@ -88,6 +98,8 @@ Public Sub Error(ByRef ErrorObject As Object, Optional ByVal EnableProgress As B
             MsgBox "找不到 DLL 入口点", vbCritical + vbOKOnly, "系统错误"
         Case 458
             MsgBox "变量类型不支持", vbCritical + vbOKOnly, "系统错误"
+        Case 2102
+            MsgBox "窗体不存在", vbCritical + vbOKOnly, "系统错误"
         Case 3001
             MsgBox "参数类型错误", vbCritical + vbOKOnly, "系统错误"
         Case 3006
@@ -164,6 +176,8 @@ Public Sub Error(ByRef ErrorObject As Object, Optional ByVal EnableProgress As B
             MsgBox "记录正被其他用户锁定", vbCritical + vbOKOnly, "系统错误"
         Case 3420
             MsgBox "数据类型转换失败", vbCritical + vbOKOnly, "系统错误"
+        Case 7874
+            MsgBox "找不到对象", vbCritical + vbOKOnly, "系统错误"
         Case Else
             MsgBox "发生错误 [" & ErrorObject.Number & "] :                           " & vbCrLf & vbCrLf & ErrorObject.Description, vbCritical + vbOKOnly, "系统错误"
     End Select

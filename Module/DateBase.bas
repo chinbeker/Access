@@ -52,8 +52,8 @@ Private Function UTC_DateToSystemTime(UTC_Value As Date) As UTC_SYSTEMTIME
 End Function
 
 Private Function UTC_SystemTimeToDate(UTC_Value As UTC_SYSTEMTIME) As Date
-    UTC_SystemTimeToDate = DateSerial(UTC_Value.UTC_Year, UTC_Value.UTC_Month, UTC_Value.UTC_Day) + _
-        TimeSerial(UTC_Value.UTC_Hour, UTC_Value.UTC_Minute, UTC_Value.UTC_Second)
+    UTC_SystemTimeToDate = VBA.DateSerial(UTC_Value.UTC_Year, UTC_Value.UTC_Month, UTC_Value.UTC_Day) + _
+        VBA.TimeSerial(UTC_Value.UTC_Hour, UTC_Value.UTC_Minute, UTC_Value.UTC_Second)
 End Function
 
 
@@ -124,15 +124,15 @@ Public Function ParseIso(UTC_IsoString As String) As Date
             If UTC_OffsetIndex > 0 Then
                 UTC_HasOffset = True
                 UTC_TimeParts = VBA.Split(VBA.Left$(UTC_Parts(1), UTC_OffsetIndex - 1), ":")
-                UTC_OffsetParts = VBA.Split(VBA.Right$(UTC_Parts(1), Len(UTC_Parts(1)) - UTC_OffsetIndex), ":")
+                UTC_OffsetParts = VBA.Split(VBA.Right$(UTC_Parts(1), VBA.Len(UTC_Parts(1)) - UTC_OffsetIndex), ":")
 
                 Select Case UBound(UTC_OffsetParts)
                 Case 0
-                    UTC_Offset = TimeSerial(VBA.CInt(UTC_OffsetParts(0)), 0, 0)
+                    UTC_Offset = VBA.TimeSerial(VBA.CInt(UTC_OffsetParts(0)), 0, 0)
                 Case 1
-                    UTC_Offset = TimeSerial(VBA.CInt(UTC_OffsetParts(0)), VBA.CInt(UTC_OffsetParts(1)), 0)
+                    UTC_Offset = VBA.TimeSerial(VBA.CInt(UTC_OffsetParts(0)), VBA.CInt(UTC_OffsetParts(1)), 0)
                 Case 2
-                    UTC_Offset = TimeSerial(VBA.CInt(UTC_OffsetParts(0)), VBA.CInt(UTC_OffsetParts(1)), Int(VBA.val(UTC_OffsetParts(2))))
+                    UTC_Offset = VBA.TimeSerial(VBA.CInt(UTC_OffsetParts(0)), VBA.CInt(UTC_OffsetParts(1)), VBA.Int(VBA.val(UTC_OffsetParts(2))))
                 End Select
 
                 If UTC_NegativeOffset Then: UTC_Offset = -UTC_Offset
@@ -147,7 +147,7 @@ Public Function ParseIso(UTC_IsoString As String) As Date
         Case 1
             ParseIso = ParseIso + VBA.TimeSerial(VBA.CInt(UTC_TimeParts(0)), VBA.CInt(UTC_TimeParts(1)), 0)
         Case 2
-            ParseIso = ParseIso + VBA.TimeSerial(VBA.CInt(UTC_TimeParts(0)), VBA.CInt(UTC_TimeParts(1)), Int(VBA.val(UTC_TimeParts(2))))
+            ParseIso = ParseIso + VBA.TimeSerial(VBA.CInt(UTC_TimeParts(0)), VBA.CInt(UTC_TimeParts(1)), VBA.Int(VBA.val(UTC_TimeParts(2))))
         End Select
 
         ParseIso = ParseUtc(ParseIso)

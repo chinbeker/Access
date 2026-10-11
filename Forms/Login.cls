@@ -47,6 +47,7 @@ Private Sub BtnLogin_Click()
         Dim User As DAO.Recordset
         Dim Sql As New SqlBuilder                                  ' 创建SQL生成器
 
+        Sql.ReadOnly
         Sql.Field "UserId"                                         ' 添加查询字段 UserId
         Sql.Field "UserName"                                       ' 添加查询字段 UserName
 
@@ -60,6 +61,7 @@ Private Sub BtnLogin_Click()
 
         DbSql.UseCustomDatabase DbPool.DbUser                      ' 使用指定数据库（user数据库保存着用户账户密码，不使用链接表）
         Set User = DbSql.First(Sql)                                ' 执行SQl，返回第1条记录
+        Set Sql = Nothing
 
         If Auth.Login(User) Then
             ' 记住账号

@@ -30,11 +30,11 @@ Public Sub Start(Optional ByVal Description As String, Optional ByVal piece As I
     Me.Repaint
 End Sub
 
-Public Sub Run(ByVal val As Double)
+Public Sub Run(ByVal Val As Double)
     On Error Resume Next
-    If val < 0 Then val = 0
-    If val > 100 Then val = 100
-    CurrentLength = VBA.CLng(ProgressSize / 100 * val + 100)
+    If Val < 0 Then Val = 0
+    If Val > 100 Then Val = 100
+    CurrentLength = VBA.CLng(ProgressSize / 100 * Val + 100)
     Me.Bar.Width = CurrentLength
     If CurrentLength >= ProgressSize Then Me.TimerInterval = 0
     DoEvents

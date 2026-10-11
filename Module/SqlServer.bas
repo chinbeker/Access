@@ -163,10 +163,10 @@ ErrorHandler:
 End Function
 
 ' 运行查询语句
-Public Function query(ByVal SqlString As String) As ADODB.Recordset
+Public Function Query(ByVal SqlString As String) As ADODB.Recordset
     On Error GoTo ErrorHandler
     If StringBase.IsNullOrEmpty(SqlString) Then Exit Function
-    Set query = GetRecordSet(SqlString, adCmdText)
+    Set Query = GetRecordSet(SqlString, adCmdText)
     Exit Function
 
 ErrorHandler:

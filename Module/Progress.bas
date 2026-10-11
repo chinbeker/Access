@@ -15,11 +15,11 @@ Public Sub Start(Optional ByVal Description As String, Optional ByVal auto As Bo
     End If
 End Sub
 
-Public Sub Run(ByVal val As Double)
+Public Sub Run(ByVal Val As Double)
     On Error Resume Next
     If Not ProgressBar Is Nothing Then
-        Call ProgressBar.Run(val)
-        If val >= 100 Then Set ProgressBar = Nothing
+        Call ProgressBar.Run(Val)
+        If Val >= 100 Then Set ProgressBar = Nothing
     End If
 End Sub
 

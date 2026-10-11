@@ -21,13 +21,13 @@ Private Sub InstallODBCDriver()
     On Error GoTo ErrorHandler
     Dim wsh As Object
     Dim path As String
-    Dim val As Variant
+    Dim Val As Variant
     Dim installed As Boolean
 
     Set wsh = CreateObject("WScript.Shell")
 
     On Error Resume Next
-    val = wsh.RegRead("HKLM\SOFTWARE\ODBC\ODBCINST.INI\ODBC Drivers\ODBC Driver 18 for SQL Server")
+    Val = wsh.RegRead("HKLM\SOFTWARE\ODBC\ODBCINST.INI\ODBC Drivers\ODBC Driver 18 for SQL Server")
     installed = VBA.IIf(Err.Number = 0, True, False)
 
     On Error GoTo ErrorHandler
@@ -53,17 +53,17 @@ Private Sub InstallOLEDBDriver()
     On Error GoTo ErrorHandler
     Dim wsh As Object
     Dim path As String
-    Dim val As Variant
+    Dim Val As Variant
     Dim installed As Boolean
 
     Set wsh = CreateObject("WScript.Shell")
 
     On Error Resume Next
-    val = wsh.RegRead("HKLM\SOFTWARE\Microsoft\MSOLEDBSQL\InstalledVersion")
+    Val = wsh.RegRead("HKLM\SOFTWARE\Microsoft\MSOLEDBSQL\InstalledVersion")
     installed = VBA.IIf(Err.Number = 0, True, False)
 
     On Error GoTo ErrorHandler
-    If Not installed Or val <> "18.7.5.0" Then
+    If Not installed Or Val <> "18.7.5.0" Then
         path = Environment.CurrentPath & "resource\driver\Microsoft_OLE_DB_Driver_18_for_SQL_Server_18.7.5_x64.msi"
         If VBA.Dir(path) = "" Then
             Message.Warning "未找到 Microsoft_OLE_DB_Driver_18_for_SQL_Server 驱动文件"
@@ -117,9 +117,9 @@ Private Sub RefreshLink()
 
     Dim DB As DAO.Database
     Dim tdf As DAO.TableDef
-    Dim count As Long
+    Dim Count As Long
     Dim size As Integer
-    Dim val As Integer
+    Dim Val As Integer
 
     '链接表计数
     Progress.Start "系统启动中"
@@ -129,7 +129,7 @@ Private Sub RefreshLink()
         If Not (VBA.Left(tdf.name, 4) = "MSys" Or VBA.Left(tdf.name, 4) = "USys") Then
             If VBA.Len(tdf.Connect) > 0 Then
                 If (tdf.Attributes And dbAttachedTable) <> 0 And (tdf.Attributes And dbAttachedODBC) = 0 Then
-                    count = count + 1
+                    Count = Count + 1
                 End If
             End If
         End If
@@ -137,17 +137,17 @@ Private Sub RefreshLink()
     Progress.Run 10
 
     '刷新链接
-    If count > 0 Then
-        size = VBA.CInt(80 / count)
-        val = 15
+    If Count > 0 Then
+        size = VBA.CInt(80 / Count)
+        Val = 15
         For Each tdf In DB.TableDefs
             If Not (VBA.Left(tdf.name, 4) = "MSys" Or VBA.Left(tdf.name, 4) = "USys") Then
                 If VBA.Len(tdf.Connect) > 0 Then
                     If (tdf.Attributes And dbAttachedTable) <> 0 And (tdf.Attributes And dbAttachedODBC) = 0 Then
                         tdf.Connect = VBA.Replace(tdf.Connect, "D:\Program\Access\", Environment.ParentPath)
                         tdf.RefreshLink
-                        val = val + size
-                        Progress.Run val
+                        Val = Val + size
+                        Progress.Run Val
                     End If
                 End If
             End If
@@ -176,7 +176,7 @@ Private Sub Install()
 
         On Error GoTo ErrorHandler
         Dim AppConfig As DAO.Recordset
-        Set AppConfig = DbSql.TableFirstRecord("Application")
+        Set AppConfig = DbSql.TableFirst("Application")
         AppConfig.Edit
         AppConfig.Fields("Installed").Value = True
         Configuration.SetValue "AppInstalled", True         '配置为已安装
@@ -233,7 +233,7 @@ Public Function Initialize() As Boolean
 
         '更新配置
         Configuration.SetValue "CurrentPath", Environment.CurrentPath
-        Set AppConfig = DbSql.TableFirstRecord("Application")
+        Set AppConfig = DbSql.TableFirst("Application")
         If Not AppConfig Is Nothing Then
             If AppConfig.RecordCount > 0 Then
                 AppConfig.Edit
@@ -256,6 +256,6 @@ Public Function Initialize() As Boolean
     Exit Function
 
 ErrorHandler:
-    Call Message.Error(Err)
+    Call Message.Error(Err, True)
     Initialize = False
 End Function
